@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     db_url: str = "postgresql://postgres:password@localhost:5432/econsight"
     log_level: str = "INFO"
     # Trailing slash required for correct httpx base_url path merging
-    statcan_base_url: str = "https://www150.statcan.gc.ca/t1/tbl1/en/dtbl/"
+    statcan_base_url: str = "https://www150.statcan.gc.ca/t1/wds/rest/"
     boc_base_url: str = "https://www.bankofcanada.ca/valet/"
     http_timeout: float = 30.0
     http_max_retries: int = 5
