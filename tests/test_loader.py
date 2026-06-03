@@ -82,6 +82,7 @@ async def test_upsert_statcan_updates_value_on_conflict(pg_conn) -> None:
 @pytest.mark.integration
 async def test_mart_materialises_after_upsert(pg_conn) -> None:
     import uuid as _uuid
+
     from econsight.clients.boc import BocObservation
     from econsight.db.loader import upsert_boc
 
