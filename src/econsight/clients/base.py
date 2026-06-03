@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Self
 
 import httpx
 from tenacity import (
@@ -44,7 +44,7 @@ class BaseApiClient:
         response.raise_for_status()
         return response.json()
 
-    async def __aenter__(self) -> "BaseApiClient":
+    async def __aenter__(self) -> Self:
         return self
 
     async def __aexit__(self, *args: object) -> None:
