@@ -21,6 +21,9 @@ class BocObservation:
 class BocClient(BaseApiClient):
     SERIES: dict[str, str] = {
         "overnight_rate": "V39079",
+        "cadusd":         "FXCADUSD",
+        "bond_10yr":      "V122487",
+        "m2pp":           "V41552796",
     }
 
     def __init__(self) -> None:
