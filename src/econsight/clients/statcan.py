@@ -22,7 +22,11 @@ class StatCanObservation:
 class StatCanClient(BaseApiClient):
     # Maps indicator name -> (table_id, 10-part coordinate, 8-digit productId)
     INDICATORS: dict[str, tuple[str, str, int]] = {
-        "cpi": ("18-10-0004-01", "2.2.0.0.0.0.0.0.0.0", 18100004),
+        "cpi":          ("18-10-0004-01", "2.2.0.0.0.0.0.0.0.0", 18100004),
+        "gdp":          ("36-10-0104-01", "1.1.1.30.0.0.0.0.0.0", 36100104),
+        "unemployment": ("14-10-0287-01", "1.7.1.1.1.1.0.0.0.0", 14100287),
+        "ippi":         ("18-10-0266-01", "1.1.0.0.0.0.0.0.0.0", 18100266),
+        "retail_trade": ("20-10-0008-01", "1.1.2.0.0.0.0.0.0.0", 20100008),
     }
 
     def __init__(self) -> None:
