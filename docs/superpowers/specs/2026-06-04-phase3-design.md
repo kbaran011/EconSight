@@ -1,5 +1,5 @@
 # EconSight Phase 3 — Consulting Interface
-## Design Spec · v1.0 · 2026-06-04
+## Design Spec · v1.1 · 2026-06-04
 
 ---
 
@@ -78,7 +78,18 @@ tests/
 
 ### `src/econsight/api/main.py`
 
-Creates the FastAPI app, configures CORS for `http://localhost:5173`, mounts all routers under `/api`, and exposes `GET /api/ping → {"status": "ok"}`. Entry point: `uvicorn econsight.api.main:app --reload --port 8000`.
+Creates the FastAPI app using the `lifespan` async context manager pattern (not the deprecated `@app.on_event("startup")`):
+
+```python
+from contextlib import asynccontextmanager
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await maybe_ingest_rag()   # runs ChromaDB ingestion if collection absent
+    yield
+app = FastAPI(lifespan=lifespan)
+```
+
+CORS is configured from `settings.cors_origins` (a `list[str]` read from the `CORS_ORIGINS` env var, defaulting to `["http://localhost:5173"]`). Mounts all routers under `/api`. Exposes `GET /api/ping → {"status": "ok"}`. Entry point: `uvicorn econsight.api.main:app --reload --port 8000`.
 
 ### Endpoints
 
@@ -87,7 +98,7 @@ Creates the FastAPI app, configures CORS for `http://localhost:5173`, mounts all
 | `GET` | `/api/ping` | Health check |
 | `GET` | `/api/indicators` | Last 36 months of all 9 indicators + derived signals from `marts.mart_monthly_macro_indicators`, sorted ascending by date |
 | `GET` | `/api/health-score` | Full `marts.economic_health_score` time series, latest score, and latest `component_scores` dict |
-| `GET` | `/api/forecasts` | All rows from `marts.model_forecasts` grouped by target; includes VAR and XGBoost point forecasts and p10/p50/p90 bands |
+| `GET` | `/api/forecasts` | Flat `list[ForecastPoint]` — all 12 rows from `marts.model_forecasts` (3 targets × 2 horizons × 2 model types); includes VAR and XGBoost point forecasts and p10/p50/p90 bands |
 | `POST` | `/api/rag/query` | Body: `{"question": str}` → `{"answer": str, "sources": list[str], "query_type": "sql" \| "narrative"}` |
 | `GET` | `/api/report/pdf` | Streams merged PDF (`application/pdf`, `Content-Disposition: attachment`) |
 
@@ -120,6 +131,10 @@ class HealthScoreResponse(BaseModel):
     history: list[HealthScorePoint]
     latest_score: float
     latest_components: dict[str, float]
+    # latest_components always has exactly 10 keys:
+    # "gdp", "cpi", "unemployment_rate", "ippi", "retail_trade",
+    # "overnight_rate", "cadusd", "bond_10yr", "m2pp", "yield_spread"
+    # (9 raw indicators + computed yield_spread from CompositeScorer._prepare)
 
 class ForecastPoint(BaseModel):
     period_date: date
@@ -208,15 +223,22 @@ Embeds the question with the same sentence-transformers model, queries ChromaDB,
 
 ### `src/econsight/rag/query_engine.py`
 
+**Public interface** (called by `src/econsight/api/routers/rag.py`):
+
+```python
+async def answer(question: str) -> RAGResponse:
+    # returns RAGResponse(answer=..., sources=[...], query_type="sql"|"narrative")
+```
+
 **Step 1 — Classify:** Send question to Claude (`claude-sonnet-4-6`) with system prompt:
 > "Classify the following question as 'sql' if it asks for specific data values, dates, or statistics that can be answered by querying a database, or 'narrative' if it asks for analysis, explanation, interpretation, or insight. Reply with only 'sql' or 'narrative'."
 
 **Step 2a — SQL path:**
-- Send question to Claude with the DB schema string (table/column names only, no data)
+- Send question to Claude with the DB schema string (table/column names only, no data) — schema exposes only the `marts.*` tables (`mart_monthly_macro_indicators`, `model_forecasts`, `economic_health_score`); raw and meta tables are omitted from the schema string to prevent exfiltration
 - Claude generates a `SELECT` statement
-- Allowlist check: reject if query contains `INSERT`, `UPDATE`, `DELETE`, `DROP`, `CREATE`, `ALTER`, `TRUNCATE`
-- Execute against PostgreSQL, format rows as a markdown table
-- Return answer + `sources: ["database"]`
+- Secondary defence: keyword allowlist check — reject if the normalised query (`query.upper()`) contains `INSERT`, `UPDATE`, `DELETE`, `DROP`, `CREATE`, `ALTER`, `TRUNCATE`, or `;` (blocks multi-statement)
+- Primary defence: execute using a dedicated read-only PostgreSQL role `econsight_reader` that has `SELECT` granted only on `marts.*` tables. Connection uses `settings.db_url_readonly` (e.g. `postgresql://econsight_reader:password@localhost:5432/econsight`). `db_connection_readonly()` is a second async context manager in `db/connection.py` that connects as this role.
+- Format result rows as a markdown table, return as answer + `sources: ["database"]`
 
 **Step 2b — Narrative path:**
 - Call `retriever.retrieve(question, top_k=5)`
@@ -247,15 +269,16 @@ async def generate_brief(conn: psycopg.AsyncConnection) -> bytes:
 
 ### `src/econsight/report/full_report.py`
 
-Runs nbconvert to execute and export `notebooks/phase2_analysis.ipynb` to PDF via LaTeX:
+Runs nbconvert to execute and export `notebooks/phase2_analysis.ipynb` to PDF via LaTeX. Because `subprocess` is blocking and PDF generation takes 30–60 seconds, the function is wrapped in `asyncio.to_thread` by the caller:
 
 ```python
 def generate_full_report() -> bytes:
     # subprocess: jupyter nbconvert --execute --to pdf notebooks/phase2_analysis.ipynb
     # reads output PDF bytes and returns them
+    # NOTE: always call as: await asyncio.to_thread(generate_full_report)
 ```
 
-Requires a LaTeX installation (`texlive-xetex` or equivalent). If LaTeX is unavailable, falls back to HTML export converted to PDF via WeasyPrint.
+**LaTeX availability** is checked once at module import time via `shutil.which("xelatex")` and stored as `_LATEX_AVAILABLE: bool`. If `False`, `generate_full_report` uses `nbconvert --to html` then WeasyPrint to produce the PDF, and logs a `structlog` warning so the fallback is always visible in logs. The `/api/report/pdf` endpoint likewise calls `generate_brief` (async) and `asyncio.to_thread(generate_full_report)` concurrently via `asyncio.gather` to minimise wall-clock latency.
 
 ### `src/econsight/report/merger.py`
 
@@ -308,6 +331,12 @@ dependencies = [
     "weasyprint>=62.0",
     "pypdf>=4.0",
 ]
+
+[project.optional-dependencies]
+dev = [
+    # existing dev deps ...
+    "httpx>=0.27",   # required by FastAPI TestClient
+]
 ```
 
 ### Frontend (`frontend/package.json`)
@@ -338,6 +367,20 @@ shadcn/ui components added via CLI: `card`, `button`, `table`, `input`, `badge`,
 Add to `.env.example`:
 ```
 ANTHROPIC_API_KEY=your_key_here
+CORS_ORIGINS=http://localhost:5173
+DB_URL_READONLY=postgresql://econsight_reader:password@localhost:5432/econsight
+```
+
+`settings` in `src/econsight/config.py` gains two new fields:
+```python
+cors_origins: list[str] = ["http://localhost:5173"]
+db_url_readonly: str = "postgresql://econsight_reader:password@localhost:5432/econsight"
+```
+
+The `econsight_reader` PostgreSQL role must be created before running Phase 3:
+```sql
+CREATE ROLE econsight_reader LOGIN PASSWORD 'password';
+GRANT SELECT ON ALL TABLES IN SCHEMA marts TO econsight_reader;
 ```
 
 ---
