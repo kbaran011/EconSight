@@ -16,6 +16,12 @@ async def db_connection() -> AsyncGenerator[psycopg.AsyncConnection, None]:
         yield conn
 
 
+@asynccontextmanager
+async def db_connection_readonly() -> AsyncGenerator[psycopg.AsyncConnection, None]:
+    async with await psycopg.AsyncConnection.connect(settings.db_url_readonly) as conn:
+        yield conn
+
+
 async def execute_sql_file(conn: psycopg.AsyncConnection, relative_path: str) -> None:
     """Execute a SQL file resolved from the project root."""
     sql = (PROJECT_ROOT / relative_path).read_text()
