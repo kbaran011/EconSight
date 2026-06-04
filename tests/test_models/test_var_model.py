@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 from datetime import date
 from pathlib import Path
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 import numpy as np
@@ -24,7 +27,7 @@ def make_target_df(n: int = 60) -> pd.DataFrame:
     )
 
 
-def _make_patches(mock_forecast: np.ndarray):
+def _make_patches(mock_forecast: np.ndarray) -> tuple[Any, Any, MagicMock, MagicMock]:
     johansen_patch = patch("econsight.models.var_model.coint_johansen")
     var_patch = patch("econsight.models.var_model.VAR")
 
@@ -93,12 +96,12 @@ def test_save_load_roundtrip(tmp_path: Path) -> None:
     johansen_p, var_p, mock_j, mock_v = _make_patches(mock_forecast)
     path = tmp_path / "var_model.pkl"
 
-    saved_payload: dict = {}
+    saved_payload: dict[str, Any] = {}
 
-    def fake_dump(obj: dict, p: Path) -> None:
+    def fake_dump(obj: dict[str, Any], p: Path) -> None:
         saved_payload.update(obj)
 
-    def fake_load(p: Path) -> dict:
+    def fake_load(p: Path) -> dict[str, Any]:
         return saved_payload
 
     with (
