@@ -394,7 +394,7 @@ Unit tests only — no live DB required.
 | `test_var_model.py` | `fit()` runs; `predict()` returns correct targets and horizons; output shapes. **Uses mocked statsmodels call** — does not call the real Johansen test on synthetic data to avoid degenerate results on small samples | 50+ |
 | `test_xgb_model.py` | `fit()` + `predict()` run; RMSE is finite; `shap_values()` shape matches feature count; no data leakage (X_aligned and y are same length) | 30 |
 | `test_monte_carlo.py` | `p10 ≤ p50 ≤ p90` for all (target, horizon) keys; scenario dict has base/upside/downside; bands dict has correct (target, horizon) tuple keys | 30 |
-| `test_composite.py` | Score in [0, 100]; component_scores has all 9 indicator keys; fit/score works on raw 9-column DataFrame | 20 |
+| `test_composite.py` | Score in [0, 100]; component_scores has all 10 keys (9 raw indicators + yield_spread); fit/score works on raw 9-column DataFrame | 20 |
 
 **Note on VAR tests:** `statsmodels` requires a minimum of `(lag_order + 1) × n_vars + n_vars` observations for the Johansen test. For lag_order=6, n_vars=3, this is 24 rows minimum. Tests for `VARModel` mock the internal `statsmodels` call and test only the interface contract (correct output shape/types), not the statistical computation.
 
