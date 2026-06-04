@@ -210,7 +210,7 @@ Axios instance with `baseURL: "http://localhost:8000"`. Typed functions:
 
 ### `src/econsight/rag/ingestion.py`
 
-Parses `notebooks/phase2_report.html` using BeautifulSoup. Splits on `<h2>` and `<h3>` tags to produce ~50 sections, each with a `title` and `text` (stripped of HTML tags). Embeds each section with `sentence-transformers` model `all-MiniLM-L6-v2` (local, ~80MB). Stores embeddings in a persistent ChromaDB collection at `models/chroma_db/`. Ingestion runs once at API startup via a `@app.on_event("startup")` handler if the collection does not already exist.
+Parses `notebooks/phase2_report.html` using BeautifulSoup. Splits on `<h2>` and `<h3>` tags to produce ~50 sections, each with a `title` and `text` (stripped of HTML tags). Embeds each section with `sentence-transformers` model `all-MiniLM-L6-v2` (local, ~80MB). Stores embeddings in a persistent ChromaDB collection at `models/chroma_db/`. Ingestion is triggered by `maybe_ingest_rag()`, a plain async function called from the `lifespan` context manager in `main.py`. The function checks whether the ChromaDB collection already exists and is a no-op on subsequent startups.
 
 ### `src/econsight/rag/retriever.py`
 
@@ -288,7 +288,7 @@ def merge_pdfs(brief_bytes: bytes, full_bytes: bytes) -> bytes:
     # returns merged PDF bytes
 ```
 
-The `GET /api/report/pdf` endpoint calls all three functions sequentially: `generate_brief` → `generate_full_report` → `merge_pdfs`, then streams the result.
+The `GET /api/report/pdf` endpoint awaits `generate_brief` and `asyncio.to_thread(generate_full_report)` concurrently via `asyncio.gather`; once both complete their results are passed to `merge_pdfs`, and the merged PDF bytes are streamed back.
 
 ---
 
