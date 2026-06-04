@@ -26,6 +26,7 @@ class CompositeScorer:
 
     def _prepare(self, df: pd.DataFrame) -> pd.DataFrame:
         data = df[_RAW_COLS].copy()
+        data = data.ffill().bfill()
         data["yield_spread"] = data["bond_10yr"] - data["overnight_rate"]
         for col in _FLIP_COLS:
             data[col] = -data[col]

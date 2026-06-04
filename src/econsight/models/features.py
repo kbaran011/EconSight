@@ -30,7 +30,8 @@ async def load_mart(conn: psycopg.AsyncConnection[Any]) -> pd.DataFrame:
         lambda v: v if isinstance(v, date) else v.date()
     )
     df = df.set_index("period_date").sort_index()
-    return df[_RAW_COLS]
+    df = df[_RAW_COLS].apply(pd.to_numeric, errors="coerce")
+    return df
 
 
 def build_feature_matrix(df: pd.DataFrame) -> pd.DataFrame:
