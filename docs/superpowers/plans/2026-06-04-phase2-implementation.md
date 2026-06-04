@@ -161,7 +161,7 @@ Expected: `All imports OK`
 - [ ] **Step 6: Commit**
 
 ```bash
-cd "/Users/barandursun/AI PROJECT/EconSight" && git add pyproject.toml .gitignore src/econsight/models/__init__.py tests/test_models/__init__.py models/artefacts/.gitkeep
+cd "/Users/barandursun/AI PROJECT/EconSight" && git add pyproject.toml .gitignore src/econsight/models/__init__.py tests/test_models/__init__.py models/artefacts/.gitkeep notebooks/.gitkeep
 git commit -m "feat: add Phase 2 dependencies and models/ package scaffold"
 ```
 
