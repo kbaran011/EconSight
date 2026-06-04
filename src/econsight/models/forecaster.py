@@ -18,6 +18,12 @@ from econsight.models.xgb_model import HORIZONS, TARGETS, XGBForecastModel
 
 _ARTEFACTS = PROJECT_ROOT / "models" / "artefacts"
 
+# Forecast row type: date, target, horizon, model, point, p10, p50, p90, base, upside, downside
+OptFloat = float | None
+ForecastRow = (
+    tuple[date, str, int, str, float, OptFloat, OptFloat, OptFloat, OptFloat, OptFloat, OptFloat]
+)
+
 _FORECAST_UPSERT = """
     INSERT INTO marts.model_forecasts
         (period_date, target, horizon_months, model_type, point_forecast,
@@ -58,7 +64,7 @@ async def upsert_forecasts(
     sim: SimulationResult,
 ) -> None:
     forecast_date = _next_month(X.index[-1])
-    rows: list[tuple[date, str, int, str, float, float | None, float | None, float | None, float | None, float | None, float | None]] = []
+    rows: list[ForecastRow] = []
     # VAR rows — MC columns are NULL
     for h, targets in var_forecasts.items():
         for target, point in targets.items():

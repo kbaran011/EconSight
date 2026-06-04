@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import date
-from typing import Any
+from typing import Any, cast
 
 import pandas as pd
 import psycopg
@@ -30,7 +30,7 @@ async def load_mart(conn: psycopg.AsyncConnection[Any]) -> pd.DataFrame:
         lambda v: v if isinstance(v, date) else v.date()
     )
     df = df.set_index("period_date").sort_index()
-    df = df[_RAW_COLS].apply(pd.to_numeric, errors="coerce")
+    df = cast(pd.DataFrame, df[_RAW_COLS].apply(pd.to_numeric, errors="coerce"))
     return df
 
 
