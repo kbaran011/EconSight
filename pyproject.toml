@@ -13,6 +13,13 @@ dependencies = [
     "pydantic-settings>=2.3",
     "structlog>=24.1",
     "rich>=13.0",
+    "statsmodels>=0.14",
+    "xgboost>=2.0",
+    "shap>=0.44",
+    "scikit-learn>=1.4",
+    "pandas>=2.1",
+    "matplotlib>=3.8",
+    "seaborn>=0.13",
 ]
 
 [project.optional-dependencies]
@@ -22,6 +29,8 @@ dev = [
     "respx>=0.21",
     "ruff>=0.4",
     "mypy>=1.10",
+    "jupyter>=1.0",
+    "nbconvert>=7.0",
 ]
 
 [project.scripts]
