@@ -61,3 +61,29 @@ CREATE TABLE IF NOT EXISTS marts.mart_monthly_macro_indicators (
                         ) STORED,
     UNIQUE (period_date)
 );
+
+-- marts.model_forecasts
+CREATE TABLE IF NOT EXISTS marts.model_forecasts (
+    id                bigserial   PRIMARY KEY,
+    period_date       date        NOT NULL,
+    target            text        NOT NULL,
+    horizon_months    int         NOT NULL,
+    model_type        text        NOT NULL,
+    point_forecast    numeric     NOT NULL,
+    p10               numeric,
+    p50               numeric,
+    p90               numeric,
+    scenario_base     numeric,
+    scenario_upside   numeric,
+    scenario_downside numeric,
+    created_at        timestamptz NOT NULL DEFAULT now(),
+    UNIQUE (period_date, target, horizon_months, model_type)
+);
+
+-- marts.economic_health_score
+CREATE TABLE IF NOT EXISTS marts.economic_health_score (
+    period_date      date        PRIMARY KEY,
+    score            numeric     NOT NULL,
+    component_scores jsonb       NOT NULL,
+    updated_at       timestamptz NOT NULL DEFAULT now()
+);
