@@ -1,112 +1,154 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { fetchForecasts } from '../api/client'
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Skeleton } from '../components/ui/skeleton'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select'
-import { ComposedChart, Line, Area, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer, Legend } from 'recharts'
+import {
+  ComposedChart, Line, Area, XAxis, YAxis, Tooltip,
+  CartesianGrid, ResponsiveContainer, Legend,
+} from 'recharts'
+
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (!active || !payload?.length) return null
+  return (
+    <div className="bg-white border border-slate-200 rounded-lg shadow-lg px-3 py-2.5 text-left min-w-[140px]">
+      <p className="text-[11px] text-slate-400 mb-2">{label}</p>
+      {payload.map((p: any) => p.value != null && (
+        <div key={p.name} className="flex justify-between gap-4 text-[12px]">
+          <span className="text-slate-500">{p.name}</span>
+          <span className="font-semibold text-slate-800">{typeof p.value === 'number' ? p.value.toFixed(4) : p.value}</span>
+        </div>
+      ))}
+    </div>
+  )
+}
 
 export default function Forecasts() {
   const { data, isLoading, isError } = useQuery({ queryKey: ['forecasts'], queryFn: fetchForecasts })
 
   const targets = [...new Set(data?.map(f => f.target) ?? [])]
-  const [target, setTarget] = useState<string>('')
+  const [target, setTarget] = useState('')
   const activeTarget = target || targets[0] || ''
 
   const rows = data?.filter(f => f.target === activeTarget) ?? []
 
   const chartData = rows.map(f => ({
     date: f.period_date.slice(0, 7),
-    forecast: +(f.point_forecast).toFixed(4),
-    p10: f.p10 != null ? +f.p10.toFixed(4) : null,
-    p90: f.p90 != null ? +f.p90.toFixed(4) : null,
-    base: f.scenario_base != null ? +f.scenario_base.toFixed(4) : null,
-    upside: f.scenario_upside != null ? +f.scenario_upside.toFixed(4) : null,
-    downside: f.scenario_downside != null ? +f.scenario_downside.toFixed(4) : null,
+    Forecast:  +(f.point_forecast).toFixed(4),
+    P10:       f.p10 != null ? +f.p10.toFixed(4) : null,
+    P90:       f.p90 != null ? +f.p90.toFixed(4) : null,
+    Upside:    f.scenario_upside   != null ? +f.scenario_upside.toFixed(4)   : null,
+    Base:      f.scenario_base     != null ? +f.scenario_base.toFixed(4)     : null,
+    Downside:  f.scenario_downside != null ? +f.scenario_downside.toFixed(4) : null,
   }))
 
-  const hasInterval = chartData.some(d => d.p10 != null && d.p90 != null)
-  const hasScenarios = chartData.some(d => d.base != null)
+  const hasInterval  = chartData.some(d => d.P10 != null && d.P90 != null)
+  const hasScenarios = chartData.some(d => d.Base != null)
+
+  const latestForecast = rows.at(-1)
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-800">Forecasts</h1>
+      <div>
+        <p className="section-title">Econometric Projections</p>
+        <h1 className="text-2xl font-semibold text-slate-900">Forecasts</h1>
+        <p className="text-sm text-slate-500 mt-0.5">VAR / XGBoost models with Monte Carlo scenario bands</p>
+      </div>
 
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-base">
-            {activeTarget ? `${activeTarget} — 12-month horizon` : 'Forecasts'}
-          </CardTitle>
-          {targets.length > 0 && (
-            <Select value={activeTarget} onValueChange={setTarget}>
-              <SelectTrigger className="w-48">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {targets.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          )}
-        </CardHeader>
-        <CardContent>
-          {isLoading ? <Skeleton className="h-72 w-full" /> : isError ? (
-            <p className="text-red-500 text-sm">Failed to load forecasts</p>
-          ) : chartData.length === 0 ? (
-            <p className="text-gray-500 text-sm">No forecast data available.</p>
-          ) : (
-            <ResponsiveContainer width="100%" height={280}>
-              <ComposedChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-                <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-                <YAxis tick={{ fontSize: 11 }} />
-                <Tooltip />
-                <Legend />
-                {hasInterval && (
-                  <Area type="monotone" dataKey="p90" fill="#bfdbfe" stroke="none" name="P90" />
-                )}
-                {hasInterval && (
-                  <Area type="monotone" dataKey="p10" fill="#fff" stroke="none" name="P10" />
-                )}
-                <Line type="monotone" dataKey="forecast" stroke="#2563eb" strokeWidth={2} dot={false} name="Forecast" />
-                {hasScenarios && <Line type="monotone" dataKey="upside" stroke="#16a34a" strokeWidth={1.5} strokeDasharray="4 2" dot={false} name="Upside" />}
-                {hasScenarios && <Line type="monotone" dataKey="base" stroke="#ca8a04" strokeWidth={1.5} strokeDasharray="4 2" dot={false} name="Base" />}
-                {hasScenarios && <Line type="monotone" dataKey="downside" stroke="#dc2626" strokeWidth={1.5} strokeDasharray="4 2" dot={false} name="Downside" />}
-              </ComposedChart>
-            </ResponsiveContainer>
-          )}
-        </CardContent>
-      </Card>
+      {/* Target selector */}
+      {targets.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {targets.map(t => (
+            <button
+              key={t}
+              onClick={() => setTarget(t)}
+              className={`text-[12px] font-medium px-3 py-1.5 rounded-full border transition-colors ${
+                activeTarget === t
+                  ? 'bg-blue-700 text-white border-blue-700'
+                  : 'bg-white text-slate-600 border-slate-200 hover:border-blue-300 hover:text-blue-700'
+              }`}
+            >
+              {t}
+            </button>
+          ))}
+        </div>
+      )}
 
+      {/* Summary stats */}
+      {latestForecast && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {[
+            { label: 'Point Forecast', value: latestForecast.point_forecast?.toFixed(4) },
+            { label: 'P10 (Bear)',     value: latestForecast.p10?.toFixed(4) ?? '—' },
+            { label: 'P90 (Bull)',     value: latestForecast.p90?.toFixed(4) ?? '—' },
+            { label: 'Model',          value: latestForecast.model_type },
+          ].map(s => (
+            <div key={s.label} className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
+              <p className="stat-label">{s.label}</p>
+              <p className="stat-value text-base">{s.value}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Chart */}
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+        <p className="section-title mb-1">{activeTarget} — 12-Month Horizon</p>
+        {isLoading ? <Skeleton className="h-64 w-full" /> : isError ? (
+          <p className="text-red-500 text-sm">Failed to load forecasts</p>
+        ) : chartData.length === 0 ? (
+          <p className="text-slate-400 text-sm">No forecast data available</p>
+        ) : (
+          <ResponsiveContainer width="100%" height={250}>
+            <ComposedChart data={chartData} margin={{ top: 4, right: 4, bottom: 0, left: -16 }}>
+              <CartesianGrid vertical={false} stroke="#f1f5f9" />
+              <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+              <Tooltip content={<CustomTooltip />} />
+              <Legend iconType="plainline" iconSize={16} wrapperStyle={{ fontSize: 12, paddingTop: 12 }} />
+              {hasInterval && <Area type="monotone" dataKey="P90" fill="#dbeafe" stroke="none" name="P90" />}
+              {hasInterval && <Area type="monotone" dataKey="P10" fill="#fff" stroke="none" name="P10" />}
+              <Line type="monotone" dataKey="Forecast" stroke="#1d4ed8" strokeWidth={2.5} dot={false} />
+              {hasScenarios && <Line type="monotone" dataKey="Upside"   stroke="#059669" strokeWidth={1.5} strokeDasharray="5 3" dot={false} />}
+              {hasScenarios && <Line type="monotone" dataKey="Base"     stroke="#d97706" strokeWidth={1.5} strokeDasharray="5 3" dot={false} />}
+              {hasScenarios && <Line type="monotone" dataKey="Downside" stroke="#dc2626" strokeWidth={1.5} strokeDasharray="5 3" dot={false} />}
+            </ComposedChart>
+          </ResponsiveContainer>
+        )}
+      </div>
+
+      {/* Detail table */}
       {rows.length > 0 && (
-        <Card>
-          <CardHeader><CardTitle className="text-base">Forecast Detail</CardTitle></CardHeader>
-          <CardContent className="overflow-x-auto">
-            <table className="w-full text-xs text-left border-collapse">
-              <thead>
-                <tr className="border-b text-gray-500">
-                  <th className="py-2 pr-4">Period</th>
-                  <th className="py-2 pr-4">Horizon (mo)</th>
-                  <th className="py-2 pr-4">Model</th>
-                  <th className="py-2 pr-4">Forecast</th>
-                  <th className="py-2 pr-4">P10</th>
-                  <th className="py-2 pr-4">P90</th>
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-slate-100">
+            <p className="section-title mb-0">Forecast Detail</p>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-slate-50">
+                <tr>
+                  {['Period', 'Horizon', 'Model', 'Forecast', 'P10', 'P90', 'Base', 'Upside', 'Downside'].map(h => (
+                    <th key={h} className="table-th">{h}</th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
                 {rows.map((f, i) => (
-                  <tr key={i} className="border-b hover:bg-gray-50">
-                    <td className="py-1.5 pr-4 font-medium">{f.period_date.slice(0, 7)}</td>
-                    <td className="py-1.5 pr-4">{f.horizon_months}</td>
-                    <td className="py-1.5 pr-4 text-gray-500">{f.model_type}</td>
-                    <td className="py-1.5 pr-4">{f.point_forecast.toFixed(4)}</td>
-                    <td className="py-1.5 pr-4">{f.p10?.toFixed(4) ?? '—'}</td>
-                    <td className="py-1.5 pr-4">{f.p90?.toFixed(4) ?? '—'}</td>
+                  <tr key={i} className={`hover:bg-slate-50 transition-colors ${i % 2 === 0 ? '' : 'bg-slate-50/40'}`}>
+                    <td className="table-td font-medium text-slate-900">{f.period_date.slice(0, 7)}</td>
+                    <td className="table-td">{f.horizon_months}mo</td>
+                    <td className="table-td text-slate-400">{f.model_type}</td>
+                    <td className="table-td font-medium">{f.point_forecast.toFixed(4)}</td>
+                    <td className="table-td text-slate-500">{f.p10?.toFixed(4) ?? '—'}</td>
+                    <td className="table-td text-slate-500">{f.p90?.toFixed(4) ?? '—'}</td>
+                    <td className="table-td text-amber-600">{f.scenario_base?.toFixed(4) ?? '—'}</td>
+                    <td className="table-td text-emerald-600">{f.scenario_upside?.toFixed(4) ?? '—'}</td>
+                    <td className="table-td text-red-500">{f.scenario_downside?.toFixed(4) ?? '—'}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )}
     </div>
   )

@@ -1,66 +1,110 @@
 import { useState } from 'react'
 import { downloadReport } from '../api/client'
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
-import { Button } from '../components/ui/button'
+
+const SECTIONS = [
+  {
+    title: 'Executive Brief',
+    description: 'One-page client-ready summary covering the composite health score, key indicator readings, and top economic risks — formatted for C-suite delivery.',
+    tag: 'WeasyPrint · PDF',
+    color: 'blue',
+  },
+  {
+    title: 'Full Analysis',
+    description: 'Complete notebook output with VAR/VECM impulse responses, XGBoost SHAP charts, Monte Carlo scenario distributions, and 12-month forecasts.',
+    tag: 'nbconvert · PDF',
+    color: 'slate',
+  },
+]
 
 export default function Report() {
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError]   = useState<string | null>(null)
+  const [done, setDone]     = useState(false)
 
   const handleDownload = async () => {
     setLoading(true)
     setError(null)
+    setDone(false)
     try {
       const blob = await downloadReport()
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
+      const url  = URL.createObjectURL(blob)
+      const a    = document.createElement('a')
+      a.href     = url
       a.download = 'econsight-report.pdf'
       a.click()
       URL.revokeObjectURL(url)
+      setDone(true)
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to generate report')
+      setError(e instanceof Error ? e.message : 'Report generation failed')
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-800">Economic Report</h1>
+    <div className="space-y-6 max-w-2xl">
+      <div>
+        <p className="section-title">Deliverable</p>
+        <h1 className="text-2xl font-semibold text-slate-900">Economic Report</h1>
+        <p className="text-sm text-slate-500 mt-0.5">
+          Generate a combined PDF — executive brief merged with full econometric analysis.
+        </p>
+      </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Generate PDF Report</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-sm text-gray-600">
-            Download a comprehensive PDF report combining the executive brief and full econometric analysis,
-            including forecasts, health score, and scenario projections.
-          </p>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-blue-50 rounded-lg p-4 text-sm">
-              <p className="font-semibold text-blue-800 mb-1">Executive Brief</p>
-              <p className="text-blue-600">1-page summary with health score, key indicators, and top risks — designed for client delivery.</p>
+      {/* Report sections */}
+      <div className="space-y-3">
+        {SECTIONS.map(s => (
+          <div key={s.title} className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 flex items-start gap-4">
+            <div className={`mt-0.5 w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
+              s.color === 'blue' ? 'bg-blue-50' : 'bg-slate-100'
+            }`}>
+              <span className={`text-xs font-bold ${s.color === 'blue' ? 'text-blue-700' : 'text-slate-500'}`}>
+                {s.color === 'blue' ? 'EX' : 'AN'}
+              </span>
             </div>
-            <div className="bg-gray-50 rounded-lg p-4 text-sm">
-              <p className="font-semibold text-gray-700 mb-1">Full Analysis</p>
-              <p className="text-gray-500">Complete notebook output with VAR/XGBoost forecasts, SHAP charts, and scenario analysis.</p>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1">
+                <p className="text-[14px] font-semibold text-slate-800">{s.title}</p>
+                <span className="text-[11px] text-slate-400 bg-slate-50 border border-slate-200 rounded px-2 py-0.5">{s.tag}</span>
+              </div>
+              <p className="text-[13px] text-slate-500 leading-relaxed">{s.description}</p>
             </div>
           </div>
+        ))}
+      </div>
 
-          <Button onClick={handleDownload} disabled={loading} className="w-full md:w-auto">
-            {loading ? 'Generating report…' : 'Download PDF Report'}
-          </Button>
-
-          {error && (
-            <p className="text-red-500 text-sm">
-              {error} — WeasyPrint or nbconvert may not be installed.
-            </p>
+      {/* Download button */}
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+        <p className="text-[13px] text-slate-500 mb-4">
+          Both sections are merged into a single PDF. Generation takes 15–30 seconds.
+        </p>
+        <button
+          onClick={handleDownload}
+          disabled={loading}
+          className="inline-flex items-center gap-2 bg-blue-700 hover:bg-blue-800 disabled:bg-blue-300 text-white text-[13px] font-medium px-5 py-2.5 rounded-lg transition-colors"
+        >
+          {loading ? (
+            <>
+              <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              Generating report…
+            </>
+          ) : (
+            <>
+              <span>↓</span>
+              Download PDF Report
+            </>
           )}
-        </CardContent>
-      </Card>
+        </button>
+
+        {done && (
+          <p className="text-[13px] text-emerald-600 font-medium mt-3">Report downloaded successfully.</p>
+        )}
+        {error && (
+          <p className="text-[13px] text-red-500 mt-3">
+            {error} — WeasyPrint or nbconvert may not be installed on this system.
+          </p>
+        )}
+      </div>
     </div>
   )
 }
