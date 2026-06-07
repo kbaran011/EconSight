@@ -13,7 +13,7 @@ COPY pyproject.toml .
 COPY src/ src/
 COPY sql/ sql/
 
-RUN pip install --no-cache-dir -e .
+RUN pip install --no-cache-dir .
 
 EXPOSE 8000
 
