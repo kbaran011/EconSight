@@ -20,6 +20,8 @@ async def maybe_ingest_rag() -> None:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+    from econsight.db.connection import init_db
+    await init_db()
     await maybe_ingest_rag()
     yield
 
