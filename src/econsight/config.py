@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     cors_origins: list[str] = ["http://localhost:5173"]
     db_url_readonly: str = "postgresql://econsight_reader:password@localhost:5432/econsight"
     anthropic_api_key: str = ""
+    groq_api_key: str = ""
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
