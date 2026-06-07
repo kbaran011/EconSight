@@ -30,7 +30,7 @@ function scoreColor(s: number) {
 }
 
 function ScoreGauge({ score }: { score: number }) {
-  const { text, ring, bg, label } = scoreColor(score)
+  const { ring, bg, label } = scoreColor(score)
   const r = 52
   const circ = 2 * Math.PI * r
   const dash = circ * (score / 10)
