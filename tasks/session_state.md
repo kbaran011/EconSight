@@ -52,12 +52,29 @@ Phase 3 fully complete — all pages implemented and verified:
 - `econsight_reader` DB role must exist for read-only endpoints (currently working)
 - WeasyPrint system deps (Pango/Cairo) may need `brew install` on fresh macOS
 
-## Next After End-to-End Test
-Phase 4 — Production & Storytelling:
-- Docker Compose for full stack (backend + frontend + postgres)
-- GitHub Actions CI for backend tests + frontend lint/type-check
-- IBM consulting deck (slide structure)
-- Loom demo recording
+## Also Done This Session (2026-06-07)
+- Groq swap: RAG now uses llama-3.3-70b-versatile via Groq free tier (no cost)
+- Professional UI overhaul: Inter font, IBM-consulting palette, custom SVG gauge, pill selectors, structured Ask answer panel
+- About page: phase roadmap, problem statement, architecture, tech stack, data sources, CTA
+- Dashboard: mini sparklines per indicator card, data-period badge, MoM reference line
+- Ask: session answer history, copy button, input cleared after submit
+- Nav: live health score badge, About link; Footer added
+
+## Phase 4 ✅ (DevOps complete)
+- [x] Dockerfile (python:3.12-slim, WeasyPrint deps, sql/ included)
+- [x] frontend/Dockerfile (multi-stage node:20-alpine → nginx:alpine)
+- [x] frontend/nginx.conf (SPA fallback + /api/ proxy to backend)
+- [x] docker-compose.yml (postgres + backend + frontend, healthcheck chain)
+- [x] .env.docker.example committed; .env.docker gitignored
+- [x] init_db() in FastAPI lifespan (self-healing schema)
+- [x] CI extended: frontend job (tsc -b + eslint + build), python-version → 3.12
+- [x] README Docker quickstart + env var table + demo placeholder
+
+## Remaining (User-driven)
+- [ ] Consulting deck: Problem → Data Sources → Architecture → Key Findings → Forecasts → Demo → Next Steps
+- [ ] Loom demo (3–5 min): Dashboard → Indicators → Ask → Report — add URL to README
+- [ ] Install Docker Desktop to test docker compose locally
+- [ ] Push to GitHub and verify CI passes (all 3 jobs: lint, test, frontend)
 
 ## Stack Quick Reference
 - Backend: `cd "AI PROJECT/EconSight" && uvicorn econsight.api.main:app --reload`
