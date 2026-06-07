@@ -1,103 +1,158 @@
 import { useQuery } from '@tanstack/react-query'
 import { fetchHealthScore, fetchIndicators } from '../api/client'
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Skeleton } from '../components/ui/skeleton'
-import { RadialBarChart, RadialBar, ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts'
+import {
+  LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer,
+} from 'recharts'
+
+const INDICATORS = [
+  { key: 'cpi_yoy',          label: 'CPI Inflation YoY', unit: '%' },
+  { key: 'unemployment_rate', label: 'Unemployment Rate', unit: '%' },
+  { key: 'overnight_rate',    label: 'Overnight Rate',    unit: '%' },
+  { key: 'cadusd',            label: 'CAD / USD',         unit: '' },
+  { key: 'bond_10yr',         label: '10-yr Bond Yield',  unit: '%' },
+  { key: 'yield_spread',      label: 'Yield Spread',      unit: 'pp' },
+  { key: 'cpi',               label: 'CPI Index',         unit: '' },
+  { key: 'm2pp',              label: 'M2++ Money Supply',  unit: '$M' },
+]
+
+function scoreColor(s: number) {
+  if (s >= 7) return { text: 'text-emerald-600', ring: '#059669', label: 'Strong' }
+  if (s >= 5) return { text: 'text-amber-600',   ring: '#d97706', label: 'Moderate' }
+  return       { text: 'text-red-600',            ring: '#dc2626', label: 'Weak' }
+}
 
 function ScoreGauge({ score }: { score: number }) {
-  const pct = Math.round((score / 10) * 100)
-  const color = score >= 7 ? '#16a34a' : score >= 5 ? '#ca8a04' : '#dc2626'
+  const { text, ring, label } = scoreColor(score)
+  const pct = score / 10
+  const r = 52
+  const circ = 2 * Math.PI * r
+  const dash = circ * pct
   return (
-    <div className="flex flex-col items-center gap-1">
-      <ResponsiveContainer width={180} height={180}>
-        <RadialBarChart innerRadius="60%" outerRadius="90%" startAngle={180} endAngle={0} data={[{ value: pct, fill: color }]}>
-          <RadialBar dataKey="value" cornerRadius={6} background={{ fill: '#e5e7eb' }} />
-        </RadialBarChart>
-      </ResponsiveContainer>
-      <span className="text-4xl font-bold" style={{ color }}>{score.toFixed(2)}</span>
-      <span className="text-sm text-gray-500">/ 10.0 economic health</span>
+    <div className="flex flex-col items-center justify-center gap-2 py-2">
+      <svg width="140" height="140" viewBox="0 0 140 140">
+        <circle cx="70" cy="70" r={r} fill="none" stroke="#e2e8f0" strokeWidth="10" />
+        <circle
+          cx="70" cy="70" r={r} fill="none"
+          stroke={ring} strokeWidth="10"
+          strokeDasharray={`${dash} ${circ}`}
+          strokeLinecap="round"
+          transform="rotate(-90 70 70)"
+          style={{ transition: 'stroke-dasharray 0.8s ease' }}
+        />
+        <text x="70" y="66" textAnchor="middle" fontSize="26" fontWeight="700" fontFamily="Inter" fill="#0f172a">
+          {score.toFixed(1)}
+        </text>
+        <text x="70" y="84" textAnchor="middle" fontSize="11" fontFamily="Inter" fill="#94a3b8">
+          out of 10
+        </text>
+      </svg>
+      <span className={`text-sm font-semibold ${text}`}>{label} Economic Conditions</span>
     </div>
   )
 }
 
-const INDICATOR_LABELS: Record<string, string> = {
-  gdp: 'GDP',
-  cpi: 'CPI',
-  unemployment_rate: 'Unemployment %',
-  overnight_rate: 'Overnight Rate %',
-  cadusd: 'CAD/USD',
-  bond_10yr: '10-yr Bond Yield %',
-  cpi_yoy: 'CPI YoY %',
-  yield_spread: 'Yield Spread',
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (!active || !payload?.length) return null
+  return (
+    <div className="bg-white border border-slate-200 rounded-lg shadow-lg px-3 py-2">
+      <p className="text-[11px] text-slate-400 mb-0.5">{label}</p>
+      <p className="text-[13px] font-semibold text-blue-700">{payload[0].value}</p>
+    </div>
+  )
 }
 
 export default function Dashboard() {
   const healthQ = useQuery({ queryKey: ['health-score'], queryFn: fetchHealthScore })
   const indicatorsQ = useQuery({ queryKey: ['indicators'], queryFn: fetchIndicators })
 
-  const latest = indicatorsQ.data?.[indicatorsQ.data.length - 1]
-  const historyData = healthQ.data?.history.slice(-12).map(h => ({
+  const latest = indicatorsQ.data?.at(-1)
+  const prev   = indicatorsQ.data?.at(-2)
+  const historyData = healthQ.data?.history.slice(-18).map(h => ({
     date: h.period_date.slice(0, 7),
     score: +h.score.toFixed(2),
   }))
 
+  function delta(key: string) {
+    const a = latest?.[key as keyof typeof latest] as number | null
+    const b = prev?.[key as keyof typeof prev] as number | null
+    if (a == null || b == null) return null
+    return a - b
+  }
+
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-800">Economic Dashboard</h1>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Health Score */}
-        <Card className="md:col-span-1">
-          <CardHeader><CardTitle className="text-base">Economic Health Score</CardTitle></CardHeader>
-          <CardContent>
-            {healthQ.isLoading ? <Skeleton className="h-48 w-full" /> : healthQ.data ? (
-              <ScoreGauge score={healthQ.data.latest_score} />
-            ) : <p className="text-red-500 text-sm">Failed to load</p>}
-          </CardContent>
-        </Card>
-
-        {/* Score history sparkline */}
-        <Card className="md:col-span-2">
-          <CardHeader><CardTitle className="text-base">Health Score — Last 12 Months</CardTitle></CardHeader>
-          <CardContent>
-            {healthQ.isLoading ? <Skeleton className="h-48 w-full" /> : historyData && (
-              <ResponsiveContainer width="100%" height={180}>
-                <LineChart data={historyData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-                  <XAxis dataKey="date" tick={{ fontSize: 11 }} interval={2} />
-                  <YAxis domain={[0, 10]} tick={{ fontSize: 11 }} />
-                  <Tooltip />
-                  <Line type="monotone" dataKey="score" stroke="#2563eb" strokeWidth={2} dot={false} />
-                </LineChart>
-              </ResponsiveContainer>
-            )}
-          </CardContent>
-        </Card>
+      {/* Page header */}
+      <div>
+        <p className="section-title">Overview</p>
+        <h1 className="text-2xl font-semibold text-slate-900">Economic Dashboard</h1>
+        <p className="text-sm text-slate-500 mt-0.5">
+          Canadian macroeconomic conditions · {latest?.period_date?.slice(0, 7) ?? '—'}
+        </p>
       </div>
 
-      {/* Latest indicator snapshot */}
-      <Card>
-        <CardHeader><CardTitle className="text-base">Latest Indicators — {latest?.period_date?.slice(0, 7) ?? '…'}</CardTitle></CardHeader>
-        <CardContent>
-          {indicatorsQ.isLoading ? (
+      {/* Top row */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        {/* Health score */}
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 flex flex-col">
+          <p className="section-title">Composite Health Score</p>
+          {healthQ.isLoading
+            ? <Skeleton className="h-44 w-full" />
+            : healthQ.data
+              ? <ScoreGauge score={healthQ.data.latest_score} />
+              : <p className="text-red-500 text-sm">Failed to load</p>
+          }
+        </div>
+
+        {/* Trend chart */}
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 lg:col-span-2">
+          <p className="section-title">Health Score Trend</p>
+          <p className="text-sm font-medium text-slate-700 mb-4">Last 18 months</p>
+          {healthQ.isLoading
+            ? <Skeleton className="h-44 w-full" />
+            : historyData && (
+              <ResponsiveContainer width="100%" height={160}>
+                <LineChart data={historyData} margin={{ top: 0, right: 4, bottom: 0, left: -16 }}>
+                  <CartesianGrid vertical={false} stroke="#f1f5f9" />
+                  <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#94a3b8' }} interval={3} axisLine={false} tickLine={false} />
+                  <YAxis domain={[0, 10]} tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Line type="monotone" dataKey="score" stroke="#1d4ed8" strokeWidth={2} dot={false} />
+                </LineChart>
+              </ResponsiveContainer>
+            )
+          }
+        </div>
+      </div>
+
+      {/* Indicator grid */}
+      <div>
+        <p className="section-title">Key Indicators — Latest Period</p>
+        {indicatorsQ.isLoading
+          ? <div className="grid grid-cols-2 md:grid-cols-4 gap-3">{Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="h-20 rounded-xl" />)}</div>
+          : latest ? (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="h-16" />)}
-            </div>
-          ) : latest ? (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {Object.entries(INDICATOR_LABELS).map(([key, label]) => {
-                const val = latest[key as keyof typeof latest]
+              {INDICATORS.map(({ key, label, unit }) => {
+                const val = latest[key as keyof typeof latest] as number | null
+                const d   = delta(key)
+                const up  = d != null && d > 0
+                const down = d != null && d < 0
                 return (
-                  <div key={key} className="bg-gray-50 rounded-lg p-3">
-                    <p className="text-xs text-gray-500 mb-1">{label}</p>
-                    <p className="text-lg font-semibold text-gray-800">{val != null ? (+val).toFixed(2) : '—'}</p>
+                  <div key={key} className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
+                    <p className="stat-label">{label}</p>
+                    <p className="stat-value">{val != null ? `${(+val).toFixed(2)}${unit}` : '—'}</p>
+                    {d != null && (
+                      <p className={`text-[11px] mt-1 font-medium ${up ? 'text-emerald-600' : down ? 'text-red-500' : 'text-slate-400'}`}>
+                        {up ? '▲' : down ? '▼' : '–'} {Math.abs(d).toFixed(2)}{unit} MoM
+                      </p>
+                    )}
                   </div>
                 )
               })}
             </div>
-          ) : <p className="text-red-500 text-sm">Failed to load indicators</p>}
-        </CardContent>
-      </Card>
+          ) : <p className="text-red-500 text-sm">Failed to load indicators</p>
+        }
+      </div>
     </div>
   )
 }
