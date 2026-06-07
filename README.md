@@ -194,6 +194,35 @@ mypy src/econsight
 
 ---
 
+## Quick Start (Docker)
+
+> Requires Docker Desktop installed and running.
+
+```bash
+cp .env.docker.example .env.docker
+# Fill in POSTGRES_PASSWORD and GROQ_API_KEY in .env.docker
+docker compose --env-file .env.docker up --build
+```
+
+Open **http://localhost** — all three services (PostgreSQL, FastAPI backend, React frontend) start automatically.
+
+## Environment Variables
+
+Copy `.env.docker.example` to `.env.docker` and fill in:
+
+| Variable | Description |
+|----------|-------------|
+| `POSTGRES_PASSWORD` | Password for the PostgreSQL `postgres` user |
+| `GROQ_API_KEY` | Free API key from [console.groq.com](https://console.groq.com) — powers the Ask page |
+
+Never commit `.env.docker` — it is gitignored.
+
+## Demo
+
+<!-- Add Loom demo URL here after recording -->
+
+---
+
 ## Design Decisions
 
 **Idempotent upserts over truncate-reload** — every write uses `ON CONFLICT DO UPDATE`, so the pipeline can be re-run at any time without data loss or duplication. Preliminary (`P`) observations get overwritten when Statistics Canada publishes final (`A`) values.
