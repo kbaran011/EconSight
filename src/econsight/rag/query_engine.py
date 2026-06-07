@@ -2,17 +2,17 @@ from __future__ import annotations
 
 import re
 
-from anthropic import AsyncAnthropic
-from anthropic.types import TextBlock
+from groq import AsyncGroq
 
 from econsight.api.schemas import RAGResponse
-from econsight.config import get_logger
+from econsight.config import get_logger, settings
 from econsight.db.connection import db_connection_readonly
 from econsight.rag.retriever import retrieve
 
 logger = get_logger(__name__)
 
-_client = AsyncAnthropic()
+_client = AsyncGroq(api_key=settings.groq_api_key)
+_MODEL = "llama-3.3-70b-versatile"
 
 _SCHEMA_CONTEXT = """
 Available tables (SELECT only, marts schema):
@@ -34,41 +34,47 @@ def _is_safe_sql(query: str) -> bool:
     return not bool(_DANGEROUS.search(query))
 
 
-def _first_text(blocks: list) -> str:  # type: ignore[type-arg]
-    """Return the text of the first TextBlock in an Anthropic response."""
-    for block in blocks:
-        if isinstance(block, TextBlock):
-            return block.text
-    return ""
+def _text(response: object) -> str:
+    return response.choices[0].message.content or ""  # type: ignore[union-attr]
 
 
 async def _classify(question: str) -> str:
-    response = await _client.messages.create(
-        model="claude-sonnet-4-6",
+    response = await _client.chat.completions.create(
+        model=_MODEL,
         max_tokens=10,
-        system=(
-            "Classify the question as 'sql' if it asks for specific data values, dates, "
-            "or statistics that need a database query, or 'narrative' if it asks for "
-            "analysis, explanation, or insight. "
-            "Reply with only the word 'sql' or 'narrative'."
-        ),
-        messages=[{"role": "user", "content": question}],
+        messages=[
+            {
+                "role": "system",
+                "content": (
+                    "Classify the question as 'sql' if it asks for specific data values, dates, "
+                    "or statistics that need a database query, or 'narrative' if it asks for "
+                    "analysis, explanation, or insight. "
+                    "Reply with only the word 'sql' or 'narrative'."
+                ),
+            },
+            {"role": "user", "content": question},
+        ],
     )
-    return _first_text(response.content).strip().lower()
+    return _text(response).strip().lower()
 
 
 async def _sql_answer(question: str) -> RAGResponse:
-    response = await _client.messages.create(
-        model="claude-sonnet-4-6",
+    response = await _client.chat.completions.create(
+        model=_MODEL,
         max_tokens=256,
-        system=(
-            "Generate a single read-only PostgreSQL SELECT query to answer the question. "
-            f"Use only these tables:\n{_SCHEMA_CONTEXT}\n"
-            "Reply with only the SQL query, no explanation."
-        ),
-        messages=[{"role": "user", "content": question}],
+        messages=[
+            {
+                "role": "system",
+                "content": (
+                    "Generate a single read-only PostgreSQL SELECT query to answer the question. "
+                    f"Use only these tables:\n{_SCHEMA_CONTEXT}\n"
+                    "Reply with only the SQL query, no explanation, no markdown."
+                ),
+            },
+            {"role": "user", "content": question},
+        ],
     )
-    sql = _first_text(response.content).strip()
+    sql = _text(response).strip().removeprefix("```sql").removesuffix("```").strip()
 
     if not _is_safe_sql(sql):
         return RAGResponse(
@@ -108,15 +114,20 @@ async def _narrative_answer(question: str) -> RAGResponse:
             query_type="narrative",
         )
     context = "\n\n".join(f"[{c['title']}]\n{c['text']}" for c in chunks)
-    response = await _client.messages.create(
-        model="claude-sonnet-4-6",
+    response = await _client.chat.completions.create(
+        model=_MODEL,
         max_tokens=512,
-        system="Answer the question using only the provided context. Be concise and factual.",
-        messages=[{"role": "user", "content": f"Context:\n{context}\n\nQuestion: {question}"}],
+        messages=[
+            {
+                "role": "system",
+                "content": "Answer the question using only the provided context. Be concise and factual.",
+            },
+            {"role": "user", "content": f"Context:\n{context}\n\nQuestion: {question}"},
+        ],
     )
     sources = list({c["title"] for c in chunks if c["title"]})
     return RAGResponse(
-        answer=_first_text(response.content),
+        answer=_text(response),
         sources=sources,
         query_type="narrative",
     )
