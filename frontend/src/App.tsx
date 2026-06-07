@@ -99,9 +99,16 @@ function Footer() {
           <span className="text-[12px] text-slate-400">Canadian Macroeconomic Decision Intelligence</span>
         </div>
         <div className="flex items-center gap-4 text-[12px] text-slate-400">
-          <span>McGill University · B.Sc. CS & Economics</span>
+          <span>McGill University · B.A. CS & Economics</span>
           <span className="text-slate-200">|</span>
-          <span>IBM Montreal Strategy & Data Consulting Portfolio</span>
+          <a
+            href="https://github.com/kbaran011"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-slate-600 transition-colors"
+          >
+            github.com/kbaran011
+          </a>
         </div>
       </div>
     </footer>
