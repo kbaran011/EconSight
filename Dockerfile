@@ -15,6 +15,8 @@ COPY sql/ sql/
 
 RUN pip install --no-cache-dir .
 
+ENV APP_ROOT=/app
+
 EXPOSE 8000
 
 CMD ["uvicorn", "econsight.api.main:app", "--host", "0.0.0.0", "--port", "8000"]

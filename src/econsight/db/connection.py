@@ -1,3 +1,4 @@
+import os
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -6,8 +7,9 @@ import psycopg
 
 from econsight.config import settings
 
-# src/econsight/db/connection.py → 4 parents up → repo root
-PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
+# In local dev, derive from __file__. In Docker (non-editable install),
+# __file__ is in site-packages so we rely on APP_ROOT env var instead.
+PROJECT_ROOT = Path(os.environ.get("APP_ROOT", str(Path(__file__).parent.parent.parent.parent)))
 
 
 @asynccontextmanager
