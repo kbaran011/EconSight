@@ -16,3 +16,5 @@ models/artefacts/*
 !models/artefacts/.gitkeep
 notebooks/phase2_report.html
 .ipynb_checkpoints/
+.worktrees/
+.env.docker
