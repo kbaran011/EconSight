@@ -1,6 +1,10 @@
 # EconSight
 
-A production-grade data engineering pipeline that ingests, warehouses, and transforms key Canadian macroeconomic indicators — built to demonstrate end-to-end data engineering across async ingestion, idempotent persistence, and a layered SQL warehouse.
+**Canadian macroeconomic decision intelligence** — ingest, model, and consult on 9 key indicators from Statistics Canada and the Bank of Canada.
+
+> *Interview pitch:* EconSight fetches live macro data into a PostgreSQL medallion warehouse, runs VAR/XGBoost forecasts with scenario bands, and serves a consulting-grade React dashboard with RAG Q&A and PDF reports. The full stack runs with `docker compose up`.
+
+[![CI](https://github.com/kbaran011/EconSight/actions/workflows/ci.yml/badge.svg)](https://github.com/kbaran011/EconSight/actions/workflows/ci.yml)
 
 ---
 
@@ -80,7 +84,7 @@ EconSight automatically fetches 9 macro indicators from Statistics Canada and th
 
 | Layer | Technology |
 |-------|-----------|
-| Language | Python 3.11 |
+| Language | Python 3.12 |
 | HTTP client | httpx (async) + tenacity (exponential back-off retry) |
 | Database | PostgreSQL 16+ |
 | DB driver | psycopg 3 (async) |
@@ -194,7 +198,7 @@ mypy src/econsight
 
 ---
 
-## Quick Start (Docker)
+## Quick Start (Docker) — Recommended for Demo
 
 > Requires Docker Desktop installed and running.
 
@@ -204,7 +208,9 @@ cp .env.docker.example .env.docker
 docker compose --env-file .env.docker up --build
 ```
 
-Open **http://localhost** — all three services (PostgreSQL, FastAPI backend, React frontend) start automatically.
+Open **http://localhost** — PostgreSQL, FastAPI backend, and React frontend start automatically.
+
+**First boot** fetches live data from StatCan + BoC and trains forecast models in the background (~3–8 min). Watch the nav bar for "Seeding data…" → "Data through YYYY-MM". Set `AUTO_SEED=false` to skip and run `econsight-run` manually inside the backend container.
 
 ## Environment Variables
 
@@ -214,12 +220,63 @@ Copy `.env.docker.example` to `.env.docker` and fill in:
 |----------|-------------|
 | `POSTGRES_PASSWORD` | Password for the PostgreSQL `postgres` user |
 | `GROQ_API_KEY` | Free API key from [console.groq.com](https://console.groq.com) — powers the Ask page |
+| `AUTO_SEED` | `true` (default in Docker) — fetch data + train models on first boot if DB is empty |
+| `AUTO_SEED_MODELS` | `true` — run forecaster after ingest when forecasts table is empty |
 
 Never commit `.env.docker` — it is gitignored.
+
+### Local development (without Docker)
+
+```bash
+# Terminal 1 — backend
+uvicorn econsight.api.main:app --reload --port 8000
+
+# Terminal 2 — frontend
+cd frontend && npm run dev
+```
+
+Open **http://localhost:5173**. Frontend uses `frontend/.env.development` to reach the API at `:8000`.
 
 ## Demo
 
 <!-- Add Loom demo URL here after recording -->
+
+## Deploy to Railway (Live Demo)
+
+Railway runs the full stack in the cloud with a single public URL. Requires a free Railway account.
+
+### One-time setup
+
+1. Push this repo to GitHub.
+2. Open [railway.app](https://railway.app) → **New Project** → **Deploy from GitHub repo** → select this repo.
+3. Railway auto-detects `railway.toml` and creates the **backend** service.
+4. Click **New** → **Database** → **Add PostgreSQL** — Railway provisions a database and injects `DATABASE_URL` into the backend automatically.
+5. In the backend service **Variables** tab, set:
+
+| Variable | Value |
+|----------|-------|
+| `GROQ_API_KEY` | Your key from [console.groq.com](https://console.groq.com) |
+| `AUTO_SEED` | `true` |
+| `AUTO_SEED_MODELS` | `true` |
+
+6. Click **New** → **GitHub Repo** again → same repo → set **Root Directory** to `frontend` → Railway detects `frontend/railway.toml` and creates the **frontend** service.
+7. In the frontend service **Variables** tab, set:
+
+| Variable | Value |
+|----------|-------|
+| `BACKEND_URL` | `backend.railway.internal:8000` |
+
+8. Note the public domain Railway assigns to the frontend service (e.g. `econsight-frontend-xxxx.railway.app`). In the backend **Variables** tab, add:
+
+| Variable | Value |
+|----------|-------|
+| `CORS_ORIGINS` | `https://econsight-frontend-xxxx.railway.app` |
+
+9. **Deploy all** — Railway builds and starts all three services.
+
+First boot fetches live data and trains models (~3–8 min). Watch the nav bar for **"Seeding data…"** → **"Data through YYYY-MM"**.
+
+> **Cost:** Railway's free tier includes $5/month credit — enough for a low-traffic demo. Upgrade to the $20/month Hobby plan for always-on uptime.
 
 ---
 
@@ -242,11 +299,27 @@ Never commit `.env.docker` — it is gitignored.
 GitHub Actions runs on every push and pull request:
 - **lint**: `ruff check` + `mypy --strict`
 - **test**: full pytest suite against a live `postgres:16` service container
+- **frontend**: TypeScript check, ESLint, Vite build
+- **docker**: build Compose stack + smoke test `/api/ping` and `/api/status`
+- **pipeline-cron** (weekly): live ingestion against CI Postgres
 
 ---
 
-## Roadmap
+## What I'd Add at Scale
 
-- **Phase 2** — Econometric modelling: VAR/VECM, XGBoost + SHAP feature importance, MLflow experiment tracking, Monte Carlo simulation
-- **Phase 3** — Consulting interface: FastAPI, React dashboard, RAG natural-language query, PDF report generation
-- **Phase 4** — Production deployment: Kubernetes, Airflow DAGs, dbt, CI/CD to cloud
+- **Redis** — cache hot API endpoints; invalidate on pipeline run
+- **Alembic** — versioned schema migrations instead of idempotent `schema.sql`
+- **Airflow** — orchestrate ingestion, dbt, and model training with SLA monitoring
+- **Read replicas** — route analytics queries to `econsight_reader` role
+- **Playwright E2E** — automated UI smoke tests in CI
+
+---
+
+## Project Phases (Complete)
+
+| Phase | Deliverable |
+|-------|-------------|
+| 1 | Async ingestion, PostgreSQL medallion, SQL marts, CI |
+| 2 | VAR/VECM, XGBoost, SHAP, Monte Carlo, health score |
+| 3 | FastAPI + React + RAG + PDF reports |
+| 4 | Docker Compose, auto-seed, portfolio polish |
