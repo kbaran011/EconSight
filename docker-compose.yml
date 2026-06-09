@@ -20,6 +20,9 @@ services:
       DB_URL: postgresql://postgres:${POSTGRES_PASSWORD}@postgres:5432/econsight
       DB_URL_READONLY: postgresql://postgres:${POSTGRES_PASSWORD}@postgres:5432/econsight
       CORS_ORIGINS: '["http://localhost"]'
+      AUTO_SEED: ${AUTO_SEED:-true}
+      AUTO_SEED_MODELS: ${AUTO_SEED_MODELS:-true}
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
     depends_on:
       postgres:
         condition: service_healthy
@@ -31,6 +34,8 @@ services:
 
   frontend:
     build: ./frontend
+    environment:
+      BACKEND_URL: backend:8000
     ports:
       - "80:80"
     depends_on:
