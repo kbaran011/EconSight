@@ -1,9 +1,23 @@
+import json
 import logging
-from typing import cast
+from typing import Any, cast
 
 import structlog
 from pydantic import AliasChoices, Field
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic.fields import FieldInfo
+from pydantic_settings import BaseSettings, EnvSettingsSource, SettingsConfigDict
+from pydantic_settings.main import PydanticBaseSettingsSource
+
+
+class _FlexEnvSource(EnvSettingsSource):
+    """Accept plain strings and comma-separated values for list[str] fields."""
+
+    def decode_complex_value(self, field_name: str, field: FieldInfo, value: Any) -> Any:
+        if isinstance(value, str):
+            v = value.strip()
+            if v and not v.startswith(("[", "{")):
+                return [s.strip() for s in v.split(",") if s.strip()]
+        return super().decode_complex_value(field_name, field, value)
 
 
 class Settings(BaseSettings):
@@ -28,6 +42,17 @@ class Settings(BaseSettings):
     auto_seed_models: bool = True
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
+
+    @classmethod
+    def settings_customise_sources(
+        cls,
+        settings_cls: type[BaseSettings],
+        init_settings: PydanticBaseSettingsSource,
+        env_settings: PydanticBaseSettingsSource,
+        dotenv_settings: PydanticBaseSettingsSource,
+        file_secret_settings: PydanticBaseSettingsSource,
+    ) -> tuple[PydanticBaseSettingsSource, ...]:
+        return (init_settings, _FlexEnvSource(settings_cls), dotenv_settings, file_secret_settings)
 
 
 settings = Settings()
