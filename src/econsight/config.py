@@ -2,11 +2,15 @@ import logging
 from typing import cast
 
 import structlog
+from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    db_url: str = "postgresql://postgres:password@localhost:5432/econsight"
+    db_url: str = Field(
+        default="postgresql://postgres:password@localhost:5432/econsight",
+        validation_alias=AliasChoices("DB_URL", "DATABASE_URL"),
+    )
     log_level: str = "INFO"
     # Trailing slash required for correct httpx base_url path merging
     statcan_base_url: str = "https://www150.statcan.gc.ca/t1/wds/rest/"
@@ -14,9 +18,14 @@ class Settings(BaseSettings):
     http_timeout: float = 30.0
     http_max_retries: int = 5
     cors_origins: list[str] = ["http://localhost:5173"]
-    db_url_readonly: str = "postgresql://econsight_reader:password@localhost:5432/econsight"
+    db_url_readonly: str = Field(
+        default="postgresql://postgres:password@localhost:5432/econsight",
+        validation_alias=AliasChoices("DB_URL_READONLY", "DATABASE_URL"),
+    )
     anthropic_api_key: str = ""
     groq_api_key: str = ""
+    auto_seed: bool = False
+    auto_seed_models: bool = True
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
