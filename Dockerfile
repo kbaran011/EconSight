@@ -12,6 +12,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY pyproject.toml .
 COPY src/ src/
 COPY sql/ sql/
+COPY notebooks/ notebooks/
+COPY models/artefacts/ models/artefacts/
 
 RUN pip install --no-cache-dir .
 
@@ -19,4 +21,4 @@ ENV APP_ROOT=/app
 
 EXPOSE 8000
 
-CMD ["uvicorn", "econsight.api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["/bin/sh", "-c", "uvicorn econsight.api.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
