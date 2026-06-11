@@ -1,12 +1,40 @@
 import json
 import logging
-from typing import Any, cast
+import os
+from typing import Any, Self, cast
+from urllib.parse import quote_plus
 
 import structlog
-from pydantic import AliasChoices, Field
+from pydantic import AliasChoices, Field, model_validator
 from pydantic.fields import FieldInfo
 from pydantic_settings import BaseSettings, EnvSettingsSource, SettingsConfigDict
 from pydantic_settings.main import PydanticBaseSettingsSource
+
+_LOCAL_DB_DEFAULT = "postgresql://postgres:password@localhost:5432/econsight"
+
+
+def _normalize_pg_url(url: str) -> str:
+    if url.startswith("postgres://"):
+        return "postgresql://" + url.removeprefix("postgres://")
+    return url
+
+
+def _url_from_pg_env() -> str | None:
+    host = os.environ.get("PGHOST")
+    if not host:
+        return None
+    user = os.environ.get("PGUSER", "postgres")
+    password = os.environ.get("PGPASSWORD", "")
+    port = os.environ.get("PGPORT", "5432")
+    database = os.environ.get("PGDATABASE", "railway")
+    userinfo = quote_plus(user)
+    if password:
+        userinfo += f":{quote_plus(password)}"
+    return f"postgresql://{userinfo}@{host}:{port}/{database}"
+
+
+def _is_local_default(url: str) -> bool:
+    return url == _LOCAL_DB_DEFAULT or "localhost" in url or "127.0.0.1" in url
 
 
 class _FlexEnvSource(EnvSettingsSource):
@@ -22,8 +50,10 @@ class _FlexEnvSource(EnvSettingsSource):
 
 class Settings(BaseSettings):
     db_url: str = Field(
-        default="postgresql://postgres:password@localhost:5432/econsight",
-        validation_alias=AliasChoices("DB_URL", "DATABASE_URL"),
+        default=_LOCAL_DB_DEFAULT,
+        validation_alias=AliasChoices(
+            "DB_URL", "DATABASE_URL", "DATABASE_PUBLIC_URL", "DATABASE_PRIVATE_URL"
+        ),
     )
     log_level: str = "INFO"
     # Trailing slash required for correct httpx base_url path merging
@@ -33,8 +63,13 @@ class Settings(BaseSettings):
     http_max_retries: int = 5
     cors_origins: list[str] = ["http://localhost:5173"]
     db_url_readonly: str = Field(
-        default="postgresql://postgres:password@localhost:5432/econsight",
-        validation_alias=AliasChoices("DB_URL_READONLY", "DATABASE_URL"),
+        default=_LOCAL_DB_DEFAULT,
+        validation_alias=AliasChoices(
+            "DB_URL_READONLY",
+            "DATABASE_URL",
+            "DATABASE_PUBLIC_URL",
+            "DATABASE_PRIVATE_URL",
+        ),
     )
     anthropic_api_key: str = ""
     groq_api_key: str = ""
@@ -53,6 +88,33 @@ class Settings(BaseSettings):
         file_secret_settings: PydanticBaseSettingsSource,
     ) -> tuple[PydanticBaseSettingsSource, ...]:
         return (init_settings, _FlexEnvSource(settings_cls), dotenv_settings, file_secret_settings)
+
+    @model_validator(mode="after")
+    def resolve_database_urls(self) -> Self:
+        if _is_local_default(self.db_url):
+            pg_url = _url_from_pg_env()
+            if pg_url:
+                self.db_url = pg_url
+        else:
+            self.db_url = _normalize_pg_url(self.db_url)
+
+        if _is_local_default(self.db_url_readonly):
+            if not _is_local_default(self.db_url):
+                self.db_url_readonly = self.db_url
+            else:
+                pg_url = _url_from_pg_env()
+                if pg_url:
+                    self.db_url_readonly = pg_url
+        else:
+            self.db_url_readonly = _normalize_pg_url(self.db_url_readonly)
+
+        if os.environ.get("RAILWAY_ENVIRONMENT") and _is_local_default(self.db_url):
+            raise ValueError(
+                "Database URL not configured. In Railway, open the backend service → "
+                "Variables → New Variable → Add Reference → select PostgreSQL → DATABASE_URL."
+            )
+
+        return self
 
 
 settings = Settings()
