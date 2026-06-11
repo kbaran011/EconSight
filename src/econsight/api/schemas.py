@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, datetime
 from typing import Literal
 
 from pydantic import BaseModel
@@ -56,3 +56,13 @@ class RAGResponse(BaseModel):
     answer: str
     sources: list[str]
     query_type: Literal["sql", "narrative"]
+
+
+class StatusResponse(BaseModel):
+    seeding_status: str
+    seeding_error: str | None = None
+    mart_row_count: int
+    latest_data_date: date | None = None
+    last_pipeline_run_at: datetime | None = None
+    last_pipeline_rows: int | None = None
+    groq_configured: bool
