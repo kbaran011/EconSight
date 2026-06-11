@@ -32,16 +32,29 @@ async def execute_sql_file(conn: psycopg.AsyncConnection, relative_path: str) ->
 
 async def init_db() -> None:
     """Create all schemas, tables, and staging views. Safe to re-run."""
+    import asyncio
+
     schema_sql = (Path(__file__).parent / "schema.sql").read_text()
     stg_statcan = (PROJECT_ROOT / "sql" / "stg_statcan.sql").read_text()
     stg_boc = (PROJECT_ROOT / "sql" / "stg_boc.sql").read_text()
 
-    async with await psycopg.AsyncConnection.connect(
-        settings.db_url, autocommit=True
-    ) as conn:
-        await conn.execute(schema_sql)
-        await conn.execute(stg_statcan)
-        await conn.execute(stg_boc)
+    last_exc: psycopg.OperationalError | None = None
+    for attempt in range(5):
+        try:
+            async with await psycopg.AsyncConnection.connect(
+                settings.db_url, autocommit=True
+            ) as conn:
+                await conn.execute(schema_sql)
+                await conn.execute(stg_statcan)
+                await conn.execute(stg_boc)
+            return
+        except psycopg.OperationalError as exc:
+            last_exc = exc
+            if attempt < 4:
+                await asyncio.sleep(2**attempt)
+
+    assert last_exc is not None
+    raise last_exc
 
 
 def init_db_entrypoint() -> None:
