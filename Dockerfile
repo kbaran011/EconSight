@@ -15,6 +15,9 @@ COPY sql/ sql/
 COPY notebooks/ notebooks/
 COPY models/artefacts/ models/artefacts/
 
+# Install CPU-only torch first so pip doesn't pull 2 GB of CUDA libraries
+RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
+
 RUN pip install --no-cache-dir .
 
 ENV APP_ROOT=/app
