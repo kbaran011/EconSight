@@ -111,7 +111,7 @@ export default function Ask() {
     <div className="space-y-6 max-w-3xl">
       {/* Header */}
       <div>
-        <p className="section-title">Intelligence Layer</p>
+        <p className="section-label">Intelligence Layer</p>
         <h1 className="text-2xl font-semibold text-slate-900">Ask EconSight</h1>
         <p className="text-sm text-slate-500 mt-0.5">
           Query Canadian economic data in natural language. Powered by Llama 3.3 via Groq.

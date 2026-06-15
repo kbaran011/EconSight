@@ -49,7 +49,7 @@ export default function Forecasts() {
   return (
     <div className="space-y-6">
       <div>
-        <p className="section-title">Econometric Projections</p>
+        <p className="section-label">Econometric Projections</p>
         <h1 className="text-2xl font-semibold text-slate-900">Forecasts</h1>
         <p className="text-sm text-slate-500 mt-0.5">VAR / XGBoost models with Monte Carlo scenario bands</p>
       </div>
@@ -92,7 +92,7 @@ export default function Forecasts() {
 
       {/* Chart */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
-        <p className="section-title mb-1">{activeTarget} — 12-Month Horizon</p>
+        <p className="section-label mb-1">{activeTarget} — 12-Month Horizon</p>
         {isLoading ? <Skeleton className="h-64 w-full" /> : isError ? (
           <p className="text-red-500 text-sm">Failed to load forecasts</p>
         ) : chartData.length === 0 ? (
@@ -120,7 +120,7 @@ export default function Forecasts() {
       {rows.length > 0 && (
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
           <div className="px-6 py-4 border-b border-slate-100">
-            <p className="section-title mb-0">Forecast Detail</p>
+            <p className="section-label mb-0">Forecast Detail</p>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full">

@@ -9,9 +9,9 @@ const PHASES = [
     items: [
       'PostgreSQL 16 with medallion architecture (Bronze → Silver → Gold)',
       'Async concurrent ingestion from Statistics Canada & Bank of Canada Valet API',
-      'dbt models for staging views and mart tables with idempotent upserts',
-      'Apache Airflow DAGs for scheduled pipeline runs',
-      'GitHub Actions CI with pytest and mypy',
+      'SQL staging views and gold mart tables with idempotent upserts',
+      'CLI pipeline (`econsight-run`) + GitHub Actions weekly cron',
+      'GitHub Actions CI with pytest, mypy, and ruff',
     ],
   },
   {
@@ -22,7 +22,7 @@ const PHASES = [
     items: [
       'VAR/VECM impulse response analysis for macro interdependencies',
       'XGBoost forecasting with SHAP explainability',
-      'MLflow experiment tracking and model registry',
+      'Model artefacts persisted to disk and PostgreSQL marts',
       'Monte Carlo simulation for scenario distributions (P10/P50/P90)',
       'Composite Economic Health Score (10-point index)',
     ],
@@ -42,12 +42,12 @@ const PHASES = [
   },
   {
     number: '04',
-    title:  'Production & Storytelling',
-    status: 'upcoming',
+    title:  'Portfolio & Demo',
+    status: 'complete',
     weeks:  'Weeks 10–12',
     items: [
-      'Docker Compose for one-command full-stack deployment',
-      'GitHub Actions CI for frontend lint + backend tests',
+      'Docker Compose with auto-seed on first boot',
+      'GitHub Actions: lint, tests, frontend build, Docker smoke test',
       'Consulting deck: problem → methodology → findings → recommendations',
       'Loom demo recording for portfolio presentation',
     ],
@@ -55,12 +55,12 @@ const PHASES = [
 ]
 
 const STACK = [
-  { category: 'Data Engineering', items: 'Python 3.14 · PostgreSQL 16 · dbt 1.8 · Apache Airflow 2.9 · httpx · Pydantic' },
-  { category: 'Econometrics',     items: 'statsmodels · XGBoost · SHAP · scikit-learn · MLflow · pandas · matplotlib' },
+  { category: 'Data Engineering', items: 'Python 3.12 · PostgreSQL 16 · SQL marts · httpx · tenacity · Pydantic' },
+  { category: 'Econometrics',     items: 'statsmodels · XGBoost · SHAP · scikit-learn · pandas · matplotlib' },
   { category: 'Backend API',      items: 'FastAPI · uvicorn · psycopg3 · ChromaDB · sentence-transformers · WeasyPrint' },
   { category: 'AI / LLM',         items: 'Llama 3.3-70b via Groq · RAG pipeline · SQL generation · semantic retrieval' },
-  { category: 'Frontend',         items: 'React 19 · TypeScript · Tailwind CSS · shadcn/ui · Recharts · TanStack Query' },
-  { category: 'DevOps',           items: 'GitHub Actions · Docker (Phase 4) · pytest · mypy · ruff' },
+  { category: 'Frontend',         items: 'React · TypeScript · Tailwind CSS · shadcn/ui · Recharts · TanStack Query' },
+  { category: 'DevOps',           items: 'GitHub Actions · Docker Compose · pytest · mypy · ruff' },
 ]
 
 const DATA_SOURCES = [
@@ -78,7 +78,7 @@ export default function About() {
             <span className="text-white text-xl font-bold tracking-tight">ES</span>
           </div>
           <div>
-            <p className="section-title">About This Project</p>
+            <p className="section-label">About This Project</p>
             <h1 className="text-2xl font-semibold text-slate-900 mb-2">EconSight</h1>
             <p className="text-[15px] text-slate-600 leading-relaxed max-w-2xl">
               A full-stack decision intelligence platform for Canadian SMEs — built to demonstrate end-to-end
@@ -109,7 +109,7 @@ export default function About() {
 
       {/* Problem statement */}
       <div>
-        <p className="section-title">Problem Statement</p>
+        <p className="section-label">Problem Statement</p>
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-3">
           <p className="text-[15px] text-slate-700 leading-relaxed">
             Canadian SMEs make capital allocation, hiring, and pricing decisions without access to the macro-economic
@@ -127,7 +127,7 @@ export default function About() {
 
       {/* Phase roadmap */}
       <div>
-        <p className="section-title">Project Phases</p>
+        <p className="section-label">Project Phases</p>
         <div className="space-y-3">
           {PHASES.map(phase => (
             <div key={phase.number} className={`bg-white rounded-xl border shadow-sm overflow-hidden ${
@@ -165,7 +165,7 @@ export default function About() {
 
       {/* Architecture */}
       <div>
-        <p className="section-title">Architecture</p>
+        <p className="section-label">Architecture</p>
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
           <div className="grid grid-cols-3 gap-0 text-center text-[12px] mb-5">
             {['Bronze (raw.*)', 'Silver (staging.*)', 'Gold (marts.*)'].map((layer, i) => (
@@ -194,7 +194,7 @@ export default function About() {
 
       {/* Tech stack */}
       <div>
-        <p className="section-title">Technology Stack</p>
+        <p className="section-label">Technology Stack</p>
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
           <table className="w-full">
             <tbody>
@@ -213,7 +213,7 @@ export default function About() {
 
       {/* Data sources */}
       <div>
-        <p className="section-title">Data Sources</p>
+        <p className="section-label">Data Sources</p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {DATA_SOURCES.map(ds => (
             <div key={ds.name} className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
