@@ -13,13 +13,16 @@ const INDICATORS: {
   unit: string
   invert?: boolean   // true = lower is better (e.g. unemployment)
 }[] = [
+  { key: 'gdp',               label: 'GDP',                unit: '$M'                },
   { key: 'cpi_yoy',           label: 'CPI Inflation YoY',  unit: '%',  invert: true  },
+  { key: 'cpi',               label: 'CPI Index',          unit: ''                  },
   { key: 'unemployment_rate', label: 'Unemployment Rate',  unit: '%',  invert: true  },
+  { key: 'ippi',              label: 'IPPI',               unit: ''                  },
+  { key: 'retail_trade',      label: 'Retail Trade',       unit: '$M'                },
   { key: 'overnight_rate',    label: 'Overnight Rate',     unit: '%'                 },
   { key: 'cadusd',            label: 'CAD / USD',          unit: ''                  },
   { key: 'bond_10yr',         label: '10-yr Bond Yield',   unit: '%'                 },
   { key: 'yield_spread',      label: 'Yield Spread',       unit: 'pp'                },
-  { key: 'cpi',               label: 'CPI Index',          unit: ''                  },
   { key: 'm2pp',              label: 'M2++ Money Supply',  unit: '$M'                },
 ]
 
@@ -116,7 +119,7 @@ export default function Dashboard() {
       {/* Header */}
       <div className="flex items-end justify-between">
         <div>
-          <p className="section-title">Overview</p>
+          <p className="section-label">Overview</p>
           <h1 className="text-2xl font-semibold text-slate-900">Economic Dashboard</h1>
           <p className="text-sm text-slate-500 mt-0.5">Canadian macroeconomic conditions</p>
         </div>
@@ -130,7 +133,7 @@ export default function Dashboard() {
       {/* Top row: gauge + sparkline */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
-          <p className="section-title">Composite Health Score</p>
+          <p className="section-label">Composite Health Score</p>
           {healthQ.isLoading
             ? <Skeleton className="h-48 w-full rounded-xl" />
             : healthQ.data
@@ -139,7 +142,7 @@ export default function Dashboard() {
         </div>
 
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 lg:col-span-2">
-          <p className="section-title">Health Score Trend</p>
+          <p className="section-label">Health Score Trend</p>
           <p className="text-sm font-medium text-slate-700 mb-4">Last 18 months</p>
           {healthQ.isLoading
             ? <Skeleton className="h-44 w-full rounded-xl" />
@@ -160,7 +163,7 @@ export default function Dashboard() {
 
       {/* Indicator cards with sparklines */}
       <div>
-        <p className="section-title">Key Indicators — Latest Period</p>
+        <p className="section-label">Key Indicators — Latest Period</p>
         {indicatorsQ.isLoading
           ? <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="h-28 rounded-xl" />)}

@@ -8,9 +8,12 @@ import {
 } from 'recharts'
 
 const SERIES: { key: keyof IndicatorRow; label: string; unit: string; color: string }[] = [
+  { key: 'gdp',               label: 'GDP',                unit: '$M', color: '#0f766e' },
   { key: 'cpi_yoy',           label: 'CPI Inflation YoY', unit: '%',  color: '#1d4ed8' },
   { key: 'cpi',               label: 'CPI Index',          unit: '',   color: '#7c3aed' },
   { key: 'unemployment_rate', label: 'Unemployment Rate',  unit: '%',  color: '#0891b2' },
+  { key: 'ippi',              label: 'IPPI',               unit: '',   color: '#b45309' },
+  { key: 'retail_trade',      label: 'Retail Trade',       unit: '$M', color: '#be185d' },
   { key: 'overnight_rate',    label: 'Overnight Rate',     unit: '%',  color: '#d97706' },
   { key: 'cadusd',            label: 'CAD / USD',          unit: '',   color: '#059669' },
   { key: 'bond_10yr',         label: '10-yr Bond Yield',   unit: '%',  color: '#dc2626' },
@@ -47,7 +50,7 @@ export default function Indicators() {
   return (
     <div className="space-y-6">
       <div>
-        <p className="section-title">Data Explorer</p>
+        <p className="section-label">Data Explorer</p>
         <h1 className="text-2xl font-semibold text-slate-900">Economic Indicators</h1>
         <p className="text-sm text-slate-500 mt-0.5">Monthly macroeconomic series — Statistics Canada & Bank of Canada</p>
       </div>
@@ -73,7 +76,7 @@ export default function Indicators() {
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
         <div className="flex items-start justify-between mb-5">
           <div>
-            <p className="section-title">{series.label}</p>
+            <p className="section-label">{series.label}</p>
             {latestVal != null && (
               <p className="text-3xl font-semibold text-slate-900">
                 {latestVal.toFixed(2)}{series.unit}
@@ -109,7 +112,7 @@ export default function Indicators() {
       {/* Data table */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-slate-100">
-          <p className="section-title mb-0">Historical Data</p>
+          <p className="section-label mb-0">Historical Data</p>
         </div>
         {isLoading ? <div className="p-6"><Skeleton className="h-40 w-full" /></div> : data && (
           <div className="overflow-x-auto">
@@ -117,14 +120,14 @@ export default function Indicators() {
               <thead className="bg-slate-50">
                 <tr>
                   <th className="table-th">Period</th>
-                  {SERIES.slice(0, 5).map(s => <th key={s.key} className="table-th">{s.label}</th>)}
+                  {SERIES.map(s => <th key={s.key} className="table-th whitespace-nowrap">{s.label}</th>)}
                 </tr>
               </thead>
               <tbody>
                 {[...data].reverse().slice(0, 24).map((row, i) => (
                   <tr key={row.period_date} className={`hover:bg-slate-50 transition-colors ${i % 2 === 0 ? '' : 'bg-slate-50/40'}`}>
                     <td className="table-td font-medium text-slate-900">{row.period_date.slice(0, 7)}</td>
-                    {SERIES.slice(0, 5).map(s => (
+                    {SERIES.map(s => (
                       <td key={s.key} className="table-td">
                         {row[s.key] != null ? `${(+(row[s.key] as number)).toFixed(2)}${s.unit}` : <span className="text-slate-300">—</span>}
                       </td>

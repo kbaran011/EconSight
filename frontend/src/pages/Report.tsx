@@ -44,7 +44,7 @@ export default function Report() {
   return (
     <div className="space-y-6 max-w-2xl">
       <div>
-        <p className="section-title">Deliverable</p>
+        <p className="section-label">Deliverable</p>
         <h1 className="text-2xl font-semibold text-slate-900">Economic Report</h1>
         <p className="text-sm text-slate-500 mt-0.5">
           Generate a combined PDF — executive brief merged with full econometric analysis.

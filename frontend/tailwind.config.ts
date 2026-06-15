@@ -6,17 +6,9 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
-      },
-      colors: {
-        brand: {
-          50:  '#eff6ff',
-          100: '#dbeafe',
-          600: '#1d4ed8',
-          700: '#1e40af',
-          900: '#1e3a5f',
-        },
-        surface: '#f8fafc',
+        sans:  ['DM Sans',       'system-ui', 'sans-serif'],
+        serif: ['Source Serif 4','Georgia',   'serif'],
+        mono:  ['DM Mono',       'monospace'],
       },
     },
   },
