@@ -86,6 +86,7 @@ DM+Mono:wght@400;500
 - Health score badge (right): `var(--nav-badge-bg/border/text)`, DM Mono, 20px border-radius
 - Live dot: 6px circle, `#4ade80`, CSS pulse animation
 - Mobile: hamburger menu below `md:`, same dark jade bg
+- **DataFreshness widget**: merge into the right-side cluster; restyle the "As of YYYY-MM" pill to use `var(--nav-badge-bg)` bg + `var(--nav-badge-border)` border + `var(--nav-link)` text; restyle the refresh button to `rgba(255,255,255,0.08)` bg, `var(--nav-link)` icon, jade hover ring — so it sits cohesively on the jade nav rather than clashing with slate/blue styles
 
 ### Page Layout
 
@@ -101,6 +102,7 @@ DM+Mono:wght@400;500
 - Status pill below: jade bg-tint + border, dot + text
 - Progress bar: 4px, `var(--surface-2)` track, jade fill, animated width on mount (0.6s ease-out)
 - Component sub-rows: 4 items, name + mini bar + value, all 10px DM Sans/Mono
+- **SVG gauge `<text>` elements**: update the inline `fontFamily` attribute from `"Inter, sans-serif"` to `"Source Serif 4, serif"` on both the score value and "out of 10" text nodes — CSS font-family does not cascade into SVG text; inline attributes are required
 
 ### Dashboard — Trend Chart
 
@@ -118,7 +120,7 @@ Grid: `grid-cols-2 md:grid-cols-4`, gap 10px
 
 Each card:
 - White background, 1px border `var(--border)`, 6px radius
-- **3px top border**: jade for neutral/positive indicators, brick red for negative-leaning (CPI, unemployment)
+- **3px top border**: use the existing `invert` flag on each entry in the `INDICATORS` array — `invert: true` → `var(--accent)` (#c9483a) top border; `invert: false` / undefined → `var(--primary)` (#1a7a55) top border
 - Label: 9px DM Sans 700 uppercase `var(--text-muted)`
 - Value: Source Serif 4 700 20px `var(--text-primary)`, unit in 14px 400 `var(--text-muted)`
 - Delta: DM Mono 500 10px, colour `var(--positive)` / `var(--negative)` / `var(--text-xmuted)`
@@ -133,11 +135,17 @@ Each card:
 - Grid: `var(--surface-2)`, horizontal lines only
 - Axis text: DM Mono 10px, `var(--text-xmuted)`
 - Tooltip: white bg, jade border-left accent, Source Serif 4 value
-- P10/P90 confidence band (Forecasts): jade at 10% opacity fill
+- P10/P90 confidence band (Forecasts): keep the existing two-`<Area>` hollow-band pattern; change P90 `<Area>` fill to `rgba(26,122,85,0.10)` and P10 `<Area>` fill to `#ffffff` (white overlay) — this produces a jade-tinted band without restructuring the chart
+
+### Indicators — Series Selector
+
+- The pill/button strip above the chart selects the active indicator series
+- **Active pill**: `bg-[var(--primary)]` white text, 6px radius
+- **Inactive pill**: `bg-[var(--surface-2)]` bg, `var(--text-secondary)` text, `1px solid var(--border)`, hover → `var(--border-strong)` border
 
 ### Ask Page
 
-- Question textarea: white bg, `var(--border)` border, 8px radius, DM Sans 14px; focus ring jade
+- Question input: the current implementation uses a single-line `<input type="text">` — keep it as `<input>`, do not convert to `<textarea>`; restyle with white bg, `var(--border)` border, 8px radius, DM Sans 14px, jade focus ring (`outline-color: var(--primary)`)
 - Submit button: jade bg, white DM Sans 600, 6px radius
 - Answer panel: white card with 3px jade left border, Source Serif 4 for answer text
 - Source chips: `var(--surface-2)` bg, DM Mono 10px
@@ -146,6 +154,7 @@ Each card:
 
 - Phase cards: white, left border accent cycling jade/red
 - Tech stack grid: `var(--surface-2)` bg chips
+- **CTA banner**: replace `bg-blue-700` with `bg-[var(--primary)]`; replace `text-blue-700` link colour with `text-[var(--primary)]`
 
 ---
 
@@ -177,13 +186,14 @@ All animations are CSS-only (no additional libraries required).
 | File | Change |
 |---|---|
 | `frontend/index.html` | Replace Inter with Source Serif 4 + DM Sans + DM Mono |
+| `frontend/tailwind.config.ts` | Extend `fontFamily`: `serif: ['Source Serif 4', 'serif']`, `sans: ['DM Sans', 'sans-serif']`, `mono: ['DM Mono', 'monospace']`; extend `colors` with the token palette |
 | `frontend/src/index.css` | Full CSS variable + utility class rewrite |
-| `frontend/src/App.tsx` | Nav (jade bg, new layout), Footer, page wrapper |
-| `frontend/src/pages/Dashboard.tsx` | Score card, trend bar chart, indicator grid |
-| `frontend/src/pages/Indicators.tsx` | Chart colours, table styling |
-| `frontend/src/pages/Forecasts.tsx` | Chart colours, confidence band |
-| `frontend/src/pages/Ask.tsx` | Form + answer panel styling |
-| `frontend/src/pages/About.tsx` | Phase cards, stack chips |
+| `frontend/src/App.tsx` | Nav (jade bg, DataFreshness restyle, new layout), Footer, page wrapper |
+| `frontend/src/pages/Dashboard.tsx` | Score card (SVG font attrs), trend bar chart, indicator grid |
+| `frontend/src/pages/Indicators.tsx` | Series selector pills, chart colours, table styling |
+| `frontend/src/pages/Forecasts.tsx` | Chart colours, confidence band fill colours |
+| `frontend/src/pages/Ask.tsx` | Input + answer panel styling |
+| `frontend/src/pages/About.tsx` | Phase cards, stack chips, CTA banner |
 | `frontend/src/pages/Report.tsx` | Download card styling |
 
 ---
