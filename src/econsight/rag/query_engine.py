@@ -120,7 +120,10 @@ async def _narrative_answer(question: str) -> RAGResponse:
         messages=[
             {
                 "role": "system",
-                "content": "Answer the question using only the provided context. Be concise and factual.",
+                "content": (
+                    "Answer the question using only the provided context."
+                    " Be concise and factual."
+                ),
             },
             {"role": "user", "content": f"Context:\n{context}\n\nQuestion: {question}"},
         ],

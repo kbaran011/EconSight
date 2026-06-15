@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from pathlib import Path
-
 from econsight.config import get_logger
 from econsight.db.connection import PROJECT_ROOT
 

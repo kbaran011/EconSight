@@ -1,5 +1,7 @@
 # EconSight
 
+[![CI](https://github.com/kbaran011/EconSight/actions/workflows/ci.yml/badge.svg)](https://github.com/kbaran011/EconSight/actions/workflows/ci.yml)
+
 **Canadian macroeconomic decision intelligence** — ingest, model, and consult on 9 key indicators from Statistics Canada and the Bank of Canada.
 
 > *Interview pitch:* EconSight fetches live macro data into a PostgreSQL medallion warehouse, runs VAR/XGBoost forecasts with scenario bands, and serves a consulting-grade React dashboard with RAG Q&A and PDF reports. The full stack runs with `docker compose up`.

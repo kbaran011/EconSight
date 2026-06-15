@@ -50,8 +50,8 @@ export default function Forecasts() {
     <div className="space-y-6">
       <div>
         <p className="section-label">Econometric Projections</p>
-        <h1 className="text-2xl font-semibold text-slate-900">Forecasts</h1>
-        <p className="text-sm text-slate-500 mt-0.5">VAR / XGBoost models with Monte Carlo scenario bands</p>
+        <h1 className="font-serif font-bold text-[28px] tracking-tight text-[var(--text-primary)]">Forecasts</h1>
+        <p className="text-sm text-[var(--text-muted)] mt-0.5">VAR / XGBoost models with Monte Carlo scenario bands</p>
       </div>
 
       {/* Target selector */}
@@ -95,7 +95,17 @@ export default function Forecasts() {
 
       {/* Chart */}
       <div className="ed-card p-6">
-        <p className="section-label mb-1">{activeTarget} — 12-Month Horizon</p>
+        <div className="flex items-start justify-between gap-4 mb-2">
+          <p className="section-label mb-0">{activeTarget} — 12-Month Horizon</p>
+          {latestForecast && latestForecast.p10 != null && latestForecast.p90 != null && (
+            <p className="text-[12px] text-[var(--text-secondary)] max-w-xs text-right leading-relaxed">
+              <span className="font-semibold text-[var(--text-primary)]">{latestForecast.model_type}</span> projects{' '}
+              <span className="font-mono text-[var(--primary)] font-semibold">{latestForecast.point_forecast.toFixed(3)}</span>
+              {' '}at 12 months — P10/P90 range{' '}
+              <span className="font-mono text-[var(--text-secondary)]">{latestForecast.p10.toFixed(3)}–{latestForecast.p90.toFixed(3)}</span>
+            </p>
+          )}
+        </div>
         {isLoading ? <Skeleton className="h-64 w-full" /> : isError ? (
           <p className="text-red-500 text-sm">Failed to load forecasts</p>
         ) : chartData.length === 0 ? (

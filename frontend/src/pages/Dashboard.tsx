@@ -131,11 +131,11 @@ export default function Dashboard() {
         <div>
           <span className="page-eyebrow">Overview</span>
           <h1 className="font-serif font-bold text-[28px] tracking-tight text-[var(--text-primary)]">Economic Dashboard</h1>
-          <p className="text-sm text-slate-500 mt-0.5">Canadian macroeconomic conditions</p>
+          <p className="text-sm text-[var(--text-muted)] mt-0.5">Canadian macroeconomic conditions</p>
         </div>
         {latest && (
-          <span className="text-[12px] text-slate-400 bg-white border border-slate-200 rounded-lg px-3 py-1.5 shadow-sm">
-            Data as of <span className="font-medium text-slate-600">{latest.period_date.slice(0, 7)}</span>
+          <span className="text-[12px] text-[var(--text-muted)] bg-white border border-[var(--border)] rounded-lg px-3 py-1.5 shadow-sm">
+            Data as of <span className="font-medium text-[var(--text-primary)]">{latest.period_date.slice(0, 7)}</span>
           </span>
         )}
       </div>
@@ -153,7 +153,7 @@ export default function Dashboard() {
 
         <div className="ed-card p-6 lg:col-span-2" style={{ animation: 'fadeSlideUp 0.4s ease-out both', animationDelay: '80ms' }}>
           <p className="section-label">Health Score Trend</p>
-          <p className="text-sm font-medium text-slate-700 mb-4">Last 18 months</p>
+          <p className="text-sm font-medium text-[var(--text-secondary)] mb-4">Last 18 months</p>
           {healthQ.isLoading
             ? <Skeleton className="h-44 w-full rounded-xl" />
             : chartData.length > 0 && (
@@ -173,6 +173,31 @@ export default function Dashboard() {
             )}
         </div>
       </div>
+
+      {/* Methodology panel */}
+      {healthQ.data && (
+        <div className="ed-card p-5" style={{ animation: 'fadeSlideUp 0.4s ease-out both', animationDelay: '160ms' }}>
+          <p className="section-label">How the Score is Computed</p>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {[
+              { dim: 'Labour Market',       indicators: 'Unemployment Rate',                    icon: '👷' },
+              { dim: 'Price Stability',      indicators: 'CPI Index · CPI YoY · IPPI',          icon: '📊' },
+              { dim: 'Financial Conditions', indicators: 'Overnight Rate · 10-yr Yield · Spread', icon: '🏦' },
+              { dim: 'Trade & External',     indicators: 'CAD/USD · M2++ · GDP · Retail Trade', icon: '🌐' },
+            ].map(({ dim, indicators, icon }) => (
+              <div key={dim} className="space-y-1">
+                <p className="text-[11px] font-semibold text-[var(--text-primary)]">{icon} {dim}</p>
+                <p className="text-[11px] text-[var(--text-muted)] leading-relaxed">{indicators}</p>
+              </div>
+            ))}
+          </div>
+          <p className="text-[11px] text-[var(--text-muted)] mt-4 pt-3 border-t border-[var(--border)]">
+            Methodology: each indicator is z-score normalised against its 15-year history, sign-adjusted so higher = better, then averaged into a 0–10 composite. Current score of{' '}
+            <span className="font-semibold text-[var(--primary)]">{healthQ.data.latest_score.toFixed(2)}</span>
+            {' '}indicates <span className="font-semibold">{healthQ.data.latest_score >= 7 ? 'strong' : healthQ.data.latest_score >= 5 ? 'moderate' : 'weak'}</span> macroeconomic conditions.
+          </p>
+        </div>
+      )}
 
       {/* Indicator cards with sparklines */}
       <div>
