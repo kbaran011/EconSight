@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import shutil
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
 
@@ -28,7 +29,7 @@ def generate_full_report() -> bytes:
 
         result = subprocess.run(
             [
-                "jupyter", "nbconvert",
+                sys.executable, "-m", "jupyter", "nbconvert",
                 "--execute",
                 "--to", to_fmt,
                 "--ExecutePreprocessor.timeout=600",
