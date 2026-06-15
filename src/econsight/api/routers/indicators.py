@@ -38,7 +38,7 @@ async def get_indicators(
         desc = cur.description or []
     cols = [d[0] for d in desc]
     result = [
-        IndicatorRow(**{c: _to_float(v) if c != "period_date" else v
+        IndicatorRow(**{c: _to_float(v) if c != "period_date" else v  # type: ignore[arg-type]
                         for c, v in zip(cols, row)})
         for row in rows
     ]
