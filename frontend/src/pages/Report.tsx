@@ -6,7 +6,7 @@ const SECTIONS = [
     title: 'Executive Brief',
     description: 'One-page client-ready summary covering the composite health score, key indicator readings, and top economic risks — formatted for C-suite delivery.',
     tag: 'WeasyPrint · PDF',
-    color: 'blue',
+    color: 'primary',
   },
   {
     title: 'Full Analysis',
@@ -46,7 +46,7 @@ export default function Report() {
       <div>
         <p className="section-label">Deliverable</p>
         <h1 className="text-2xl font-semibold text-slate-900">Economic Report</h1>
-        <p className="text-sm text-slate-500 mt-0.5">
+        <p className="text-sm text-[var(--text-secondary)] mt-0.5">
           Generate a combined PDF — executive brief merged with full econometric analysis.
         </p>
       </div>
@@ -54,34 +54,34 @@ export default function Report() {
       {/* Report sections */}
       <div className="space-y-3">
         {SECTIONS.map(s => (
-          <div key={s.title} className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 flex items-start gap-4">
+          <div key={s.title} className="ed-card p-5 flex items-start gap-4">
             <div className={`mt-0.5 w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
-              s.color === 'blue' ? 'bg-blue-50' : 'bg-slate-100'
+              s.color === 'primary' ? 'bg-[var(--primary)]/10' : 'bg-[var(--surface-2)]'
             }`}>
-              <span className={`text-xs font-bold ${s.color === 'blue' ? 'text-blue-700' : 'text-slate-500'}`}>
-                {s.color === 'blue' ? 'EX' : 'AN'}
+              <span className={`text-xs font-bold ${s.color === 'primary' ? 'text-[var(--primary)]' : 'text-[var(--text-muted)]'}`}>
+                {s.color === 'primary' ? 'EX' : 'AN'}
               </span>
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
-                <p className="text-[14px] font-semibold text-slate-800">{s.title}</p>
-                <span className="text-[11px] text-slate-400 bg-slate-50 border border-slate-200 rounded px-2 py-0.5">{s.tag}</span>
+                <p className="text-[14px] font-semibold text-[var(--text-primary)]">{s.title}</p>
+                <span className="text-[11px] text-[var(--text-muted)] bg-[var(--surface-2)] border border-[var(--border)] rounded px-2 py-0.5">{s.tag}</span>
               </div>
-              <p className="text-[13px] text-slate-500 leading-relaxed">{s.description}</p>
+              <p className="text-[13px] text-[var(--text-secondary)] leading-relaxed">{s.description}</p>
             </div>
           </div>
         ))}
       </div>
 
       {/* Download button */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
-        <p className="text-[13px] text-slate-500 mb-4">
+      <div className="ed-card p-8 max-w-lg mx-auto">
+        <p className="text-[13px] text-[var(--text-secondary)] mb-4">
           Both sections are merged into a single PDF. Generation takes 15–30 seconds.
         </p>
         <button
           onClick={handleDownload}
           disabled={loading}
-          className="inline-flex items-center gap-2 bg-blue-700 hover:bg-blue-800 disabled:bg-blue-300 text-white text-[13px] font-medium px-5 py-2.5 rounded-lg transition-colors"
+          className="inline-flex items-center gap-2 bg-[var(--primary)] text-white font-semibold px-6 py-3 rounded-[6px] hover:bg-[var(--primary-dark)] transition-colors disabled:opacity-50"
         >
           {loading ? (
             <>
