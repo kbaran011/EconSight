@@ -60,9 +60,9 @@ function DataFreshness() {
       <span
         className={`inline-flex items-center gap-1.5 text-[11px] font-medium border rounded-full px-2.5 py-0.5 whitespace-nowrap ${
           isError
-            ? 'text-red-600 bg-red-50 border-red-200'
+            ? 'text-[var(--negative)] bg-[var(--nav-badge-bg)] border border-[var(--nav-badge-border)]'
             : isSeeding
-              ? 'text-amber-600 bg-amber-50 border-amber-200'
+              ? 'text-[var(--nav-badge-text)] bg-[var(--nav-badge-bg)] border border-[var(--nav-badge-border)]'
               : 'bg-[var(--nav-badge-bg)] border-[var(--nav-badge-border)] text-[var(--nav-link)]'
         }`}
         title={period ? `Data through ${period}` : undefined}
