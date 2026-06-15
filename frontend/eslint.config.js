@@ -7,6 +7,8 @@ import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
   globalIgnores(['dist', 'src/components/ui/**']),
+  // Explicit object-level ignore as fallback for older ESLint flat config resolvers
+  { ignores: ['dist/**', 'src/components/ui/**'] },
   {
     files: ['**/*.{ts,tsx}'],
     extends: [
