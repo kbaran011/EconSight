@@ -6,8 +6,12 @@ from urllib.parse import quote_plus
 import structlog
 from pydantic import AliasChoices, Field, model_validator
 from pydantic.fields import FieldInfo
-from pydantic_settings import BaseSettings, EnvSettingsSource, SettingsConfigDict
-from pydantic_settings.main import PydanticBaseSettingsSource
+from pydantic_settings import (
+    BaseSettings,
+    EnvSettingsSource,
+    PydanticBaseSettingsSource,
+    SettingsConfigDict,
+)
 
 _LOCAL_DB_DEFAULT = "postgresql://postgres:password@localhost:5432/econsight"
 

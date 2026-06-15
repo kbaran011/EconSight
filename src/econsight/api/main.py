@@ -14,7 +14,7 @@ logger = get_logger(__name__)
 
 async def _ingest_rag_background() -> None:
     try:
-        from econsight.rag.ingestion import ingest_if_needed  # type: ignore[import-untyped]
+        from econsight.rag.ingestion import ingest_if_needed
         await ingest_if_needed()
     except Exception:
         pass  # RAG not ready — ingest lazily on first query
