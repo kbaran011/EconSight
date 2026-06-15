@@ -167,9 +167,10 @@ This task establishes every design token. All subsequent tasks depend on it.
       @apply text-[10px] font-medium mt-0.5;
       font-family: 'DM Mono', monospace;
     }
-    .delta-up-good { color: var(--positive); }
-    .delta-up-bad  { color: var(--negative); }
-    .delta-dn-good { color: var(--positive); }
+    .delta-up-good { color: var(--positive); }  /* up & good: CAD rising */
+    .delta-up-bad  { color: var(--negative); }  /* up & bad:  CPI rising */
+    .delta-dn-good { color: var(--positive); }  /* down & good: unemployment falling */
+    .delta-dn-bad  { color: var(--negative); }  /* down & bad: GDP falling */
     .delta-neutral { color: var(--text-xmuted); }
 
     /* White card base */
@@ -200,7 +201,23 @@ This task establishes every design token. All subsequent tasks depend on it.
   }
   ```
 
-- [ ] **Step 4: Verify TypeScript + lint**
+- [ ] **Step 4: Migrate `section-title` → `section-label` across all pages**
+
+  The old `.section-title` class is removed from `index.css`; every file that uses it must be updated now or those elements will render unstyled. Run:
+
+  ```bash
+  grep -rl "section-title" frontend/src/ | xargs sed -i '' 's/section-title/section-label/g'
+  ```
+
+  Verify the rename landed in all files:
+
+  ```bash
+  grep -r "section-title" frontend/src/
+  ```
+
+  Expected: no output (zero remaining occurrences).
+
+- [ ] **Step 5: Verify TypeScript + lint**
 
   ```bash
   cd frontend && npx tsc -b --noEmit && npx eslint src/
@@ -208,11 +225,11 @@ This task establishes every design token. All subsequent tasks depend on it.
 
   Expected: no errors.
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 6: Commit**
 
   ```bash
-  git add frontend/index.html frontend/tailwind.config.ts frontend/src/index.css
-  git commit -m "feat: editorial design tokens — Source Serif 4, DM Sans, jade palette"
+  git add frontend/index.html frontend/tailwind.config.ts frontend/src/index.css frontend/src/pages/
+  git commit -m "feat: editorial design tokens — Source Serif 4, DM Sans, jade palette, section-label migration"
   ```
 
 ---
@@ -226,32 +243,42 @@ The nav sits on every page. This task also updates the footer and page backgroun
 
 - [ ] **Step 1: Update the `Nav` function in `App.tsx`**
 
-  Replace the entire `Nav` function (keep imports intact). The key changes:
-  - Nav `div` background: `bg-[var(--primary)]` height `h-[52px]`
-  - Logo chip: `bg-[var(--accent)]` text-white rounded-[4px] w-7 h-7
-  - Title: `font-serif font-bold text-[16px]` color `text-[var(--nav-text)]`
-  - Eyebrow "Canadian Economic Intelligence": hidden on small screens, `text-[10px] font-medium uppercase tracking-[0.08em]` color `text-[var(--nav-link)]`, separated from title by a `w-px h-4 bg-white/15` divider
-  - Nav links: `text-[12px] font-medium` color `text-[var(--nav-link)]`; active: `bg-[var(--nav-link-active-bg)] text-[var(--nav-text)]`
-  - Health score badge: `bg-[var(--nav-badge-bg)] border border-[var(--nav-badge-border)] text-[var(--nav-badge-text)] font-mono text-[11px] px-3 py-1 rounded-full`
-  - Live dot: use `.nav-live-dot` class
-  - **DataFreshness pill restyle**: change the "As of" pill className to `bg-[var(--nav-badge-bg)] border border-[var(--nav-badge-border)] text-[var(--nav-link)] text-[11px]`; change the refresh button className to `w-7 h-7 rounded-full bg-white/8 text-[var(--nav-link)] hover:bg-white/15 hover:ring-1 hover:ring-[var(--nav-link)] transition-colors`
-  - Mobile menu: same `bg-[var(--primary)]` background, `border-white/10` top border
+  Edit the `Nav` function (search for `function Nav()`). Key class changes:
+  - Outer `<header>` background: `bg-[var(--primary)]` (replaces `bg-white`)
+  - Logo chip `<div>`: `bg-[var(--accent)] text-white rounded-[4px] w-7 h-7` (replaces `bg-blue-700`)
+  - Title `<span>`: `font-serif font-bold text-[16px] text-[var(--nav-text)]`
+  - Eyebrow span: `text-[10px] font-medium uppercase tracking-[0.08em] text-[var(--nav-link)]`, separated by `w-px h-4 bg-white/15` divider
+  - Each nav `<Link>`: base `text-[12px] font-medium text-[var(--nav-link)]`; active: add `bg-[var(--nav-link-active-bg)] text-[var(--nav-text)]`
+  - Health score `<ScoreBadge>` wrapper: `bg-[var(--nav-badge-bg)] border border-[var(--nav-badge-border)] text-[var(--nav-badge-text)] font-mono text-[11px] px-3 py-1 rounded-full`
+  - Live dot: use `.nav-live-dot` class (replaces `bg-emerald-400 animate-pulse`)
+  - Mobile menu `<nav>`: `bg-[var(--primary)] border-t border-white/10`
 
-- [ ] **Step 2: Update footer**
+- [ ] **Step 2: Restyle `DataFreshness` function in `App.tsx`**
 
-  Footer background: `bg-[var(--primary)]`. Footer text / links: use `text-[var(--nav-link)]` for secondary text, `text-[var(--nav-text)]` for primary.
+  `DataFreshness` is a **separate function** defined above `Nav` (look for `function DataFreshness()`). Edit it independently:
+  - The "As of YYYY-MM" `<span>`: replace `border border-slate-200 bg-white text-slate-500` with `bg-[var(--nav-badge-bg)] border border-[var(--nav-badge-border)] text-[var(--nav-link)] text-[11px]`
+  - The refresh `<button>`: replace `border border-slate-200 bg-white text-slate-400 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50` with `bg-white/8 text-[var(--nav-link)] hover:bg-white/15 hover:ring-1 hover:ring-[var(--nav-link)] transition-colors`
 
-- [ ] **Step 3: Update main page wrapper**
+- [ ] **Step 3: Update footer**
 
-  The `<main>` wrapper in `App.tsx`: ensure `body` background is `var(--bg)` (already set in CSS). Page content wrapper padding: `px-4 sm:px-8 py-8`.
+  Find the `function Footer()` in `App.tsx`. Change:
+  - `<footer>` background: `bg-[var(--primary)]` (replaces `bg-white border-t`)
+  - Platform name `<span>`: `text-[var(--nav-text)]`
+  - Secondary text `<span>`: `text-[var(--nav-link)]`
+  - Logo chip inside footer: `bg-[var(--accent)]` (replaces any `bg-blue-700`)
+  - Footer links `<a>` / `<span>`: `text-[var(--nav-link)] hover:text-[var(--nav-text)]` (replaces `text-slate-400`)
 
-- [ ] **Step 4: Verify TypeScript + lint**
+- [ ] **Step 4: Update main page wrapper**
+
+  The `<main>` wrapper in `App.tsx`: body background is `var(--bg)` (set in CSS). Page content wrapper padding: `px-4 sm:px-8 py-8`.
+
+- [ ] **Step 5: Verify TypeScript + lint**
 
   ```bash
   cd frontend && npx tsc -b --noEmit && npx eslint src/
   ```
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 6: Commit**
 
   ```bash
   git add frontend/src/App.tsx
@@ -273,8 +300,8 @@ Three sub-components to restyle: `ScoreGauge`, the trend chart, and indicator ca
 
 - [ ] **Step 2: Update `ScoreGauge` SVG**
 
-  - Change both `<text>` elements: `fontFamily="Source Serif 4, serif"` (inline SVG attribute — CSS does not cascade here)
-  - Score value text: `fill="var(--primary)"` (currently uses hardcoded colour)
+  - **First `<text>` element** (score value, `y="70"`): change `fontFamily="Inter, sans-serif"` → `fontFamily="Source Serif 4, serif"` and `fill="#0f172a"` → `fill="var(--primary)"`
+  - **Second `<text>` element** ("out of 10", `y="88"`): change `fontFamily="Inter, sans-serif"` → `fontFamily="Source Serif 4, serif"` (fill can stay `#94a3b8` or change to `var(--text-xmuted)`)
   - Gauge stroke: `stroke={ring}` — update `scoreColor()` to return jade/amber/red values matching the new palette:
     ```ts
     function scoreColor(s: number) {
@@ -287,7 +314,13 @@ Three sub-components to restyle: `ScoreGauge`, the trend chart, and indicator ca
 
 - [ ] **Step 3: Replace health score trend LineChart with BarChart**
 
-  Import `Bar, BarChart, Cell` from recharts (replace `LineChart, Line`). Render the last 18 months as bars:
+  **Important:** `MiniSparkline` (a separate function in this file) also imports `LineChart` and `Line` and must keep them. Only remove the trend chart's usage. In the import statement, remove `LineChart, Line, ReferenceLine` (used only by the old trend chart), and add `Bar, BarChart, Cell`. The final recharts import should look like:
+  ```ts
+  import { Bar, BarChart, Cell, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer } from 'recharts'
+  ```
+  — `LineChart` and `Line` remain imported because `MiniSparkline` uses them.
+
+  Render the last 18 months as bars:
   - Each bar uses `fill` `#1a7a55` at `opacity="0.2"` for all bars except the last, which gets `opacity="1"`
   - `CartesianGrid` `vertical={false}` stroke `var(--surface-2)`
   - Axis `tick` style: `{ fontSize: 10, fill: 'var(--text-xmuted)', fontFamily: 'DM Mono, monospace' }`
@@ -301,13 +334,25 @@ Three sub-components to restyle: `ScoreGauge`, the trend chart, and indicator ca
   - Top border: `borderTop: \`3px solid \${invert ? 'var(--accent)' : 'var(--primary)'}\`` as inline style
   - Label: use `.stat-label` class
   - Value: use `.stat-value` class; unit span: `text-[14px] font-normal text-[var(--text-muted)]`
-  - Delta: use `.delta` + `.delta-up-good` / `.delta-up-bad` / `.delta-dn-good` / `.delta-neutral` classes (pick based on `good`/`bad` booleans already computed in the render)
+  - Delta: use `.delta` base class plus a colour class. The render already computes `good` and `bad` booleans plus `up`/`down`. Use this mapping:
+    - `up && good` → `delta-up-good` (e.g. GDP rising)
+    - `up && bad`  → `delta-up-bad`  (e.g. CPI rising)
+    - `down && good` → `delta-dn-good` (e.g. unemployment falling)
+    - `down && bad`  → `delta-dn-bad`  (e.g. GDP falling)
+    - neither up nor down → `delta-neutral`
   - Add staggered entrance animation: `style={{ animation: 'fadeSlideUp 0.4s ease-out both', animationDelay: \`\${index * 60}ms\`` }}` (add `index` to the `.map((indicator, index) =>` callback)
   - Sparkline container: `h-7 rounded bg-[var(--surface-2)] mt-1 overflow-hidden`
 
-- [ ] **Step 5: Add `section-label` to each section heading**
+- [ ] **Step 5: Add entrance animations to top-row cards and sparklines**
 
-  Replace existing `<p className="section-title">` with `<p className="section-label">`.
+  - Score card (`ed-card` wrapping the gauge): add `style={{ animation: 'fadeSlideUp 0.4s ease-out both' }}`
+  - Trend chart card: add `style={{ animation: 'fadeSlideUp 0.4s ease-out both', animationDelay: '80ms' }}`
+  - Score progress bar `<div>` (the fill bar inside the gauge card): add `style={{ transition: 'width 0.6s ease-out' }}` — the width is already driven by the score value so the transition fires on mount
+  - Sparkline containers: add `style={{ animation: 'fadeSlideUp 0.3s ease-out both', animationDelay: '0.2s' }}` on each sparkline `<div>`
+
+- [ ] **Step 6: Add `section-label` to each section heading**
+
+  Replace existing `<p className="section-title">` with `<p className="section-label">` (Task 1 already ran the global sed; this step is just a visual confirmation the Dashboard headings look correct).
 
 - [ ] **Step 6: Verify TypeScript + lint**
 
@@ -384,22 +429,29 @@ Three sub-components to restyle: `ScoreGauge`, the trend chart, and indicator ca
   - Wrap chart in `ed-card p-6`
   - Main forecast `<Line>`: `stroke="#1a7a55"` `strokeWidth={2}`
   - Scenario lines: Base `stroke="#1a7a55"` at 60% opacity, Upside `stroke="#1a6a3a"`, Downside `stroke="#c9483a"`
-  - P90 `<Area>`: `fill="rgba(26,122,85,0.10)"` `stroke="none"`
-  - P10 `<Area>`: `fill="#ffffff"` `stroke="none"` (white overlay to produce hollow band)
+  - P90 `<Area>`: `fill="rgba(26,122,85,0.10)"` `stroke="none"` — **must appear before P10 in JSX** so P10 paints on top
+  - P10 `<Area>`: `fill="#ffffff"` `stroke="none"` — white overlay that cuts the inside of the band; **must appear after P90 in JSX**
   - Grid + axis tick styles same as Task 4 Step 2
   - Custom tooltip: same editorial style
 
-- [ ] **Step 3: Restyle detail table**
+- [ ] **Step 3: Restyle forecast summary stat cards**
+
+  Forecasts.tsx renders 3–4 stat cards below the chart (e.g. "Latest Forecast", "P10", "P90"). These use `.stat-label` and `.stat-value` which now carry Source Serif 4 from Task 1. Additionally:
+  - Card wrapper: `ed-card p-4`
+  - Remove any remaining `text-slate-*` / `bg-white border border-slate-*` classes from these cards
+  - Target selector pills above these cards: same pill treatment as Step 1
+
+- [ ] **Step 4: Restyle detail table**
 
   Same as Indicators table (Task 4 Step 3).
 
-- [ ] **Step 4: Verify TypeScript + lint**
+- [ ] **Step 5: Verify TypeScript + lint**
 
   ```bash
   cd frontend && npx tsc -b --noEmit && npx eslint src/
   ```
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 6: Commit**
 
   ```bash
   git add frontend/src/pages/Forecasts.tsx
