@@ -8,25 +8,25 @@ import {
 } from 'recharts'
 
 const SERIES: { key: keyof IndicatorRow; label: string; unit: string; color: string }[] = [
-  { key: 'gdp',               label: 'GDP',                unit: '$M', color: '#0f766e' },
-  { key: 'cpi_yoy',           label: 'CPI Inflation YoY', unit: '%',  color: '#1d4ed8' },
-  { key: 'cpi',               label: 'CPI Index',          unit: '',   color: '#7c3aed' },
-  { key: 'unemployment_rate', label: 'Unemployment Rate',  unit: '%',  color: '#0891b2' },
-  { key: 'ippi',              label: 'IPPI',               unit: '',   color: '#b45309' },
-  { key: 'retail_trade',      label: 'Retail Trade',       unit: '$M', color: '#be185d' },
-  { key: 'overnight_rate',    label: 'Overnight Rate',     unit: '%',  color: '#d97706' },
-  { key: 'cadusd',            label: 'CAD / USD',          unit: '',   color: '#059669' },
-  { key: 'bond_10yr',         label: '10-yr Bond Yield',   unit: '%',  color: '#dc2626' },
-  { key: 'yield_spread',      label: 'Yield Spread',       unit: 'pp', color: '#9333ea' },
-  { key: 'm2pp',              label: 'M2++ Money Supply',  unit: '$M', color: '#0284c7' },
+  { key: 'gdp',               label: 'GDP',                unit: '$M', color: '#1a7a55' },
+  { key: 'cpi_yoy',           label: 'CPI Inflation YoY', unit: '%',  color: '#1a7a55' },
+  { key: 'cpi',               label: 'CPI Index',          unit: '',   color: '#1a7a55' },
+  { key: 'unemployment_rate', label: 'Unemployment Rate',  unit: '%',  color: '#1a7a55' },
+  { key: 'ippi',              label: 'IPPI',               unit: '',   color: '#1a7a55' },
+  { key: 'retail_trade',      label: 'Retail Trade',       unit: '$M', color: '#1a7a55' },
+  { key: 'overnight_rate',    label: 'Overnight Rate',     unit: '%',  color: '#1a7a55' },
+  { key: 'cadusd',            label: 'CAD / USD',          unit: '',   color: '#1a7a55' },
+  { key: 'bond_10yr',         label: '10-yr Bond Yield',   unit: '%',  color: '#1a7a55' },
+  { key: 'yield_spread',      label: 'Yield Spread',       unit: 'pp', color: '#1a7a55' },
+  { key: 'm2pp',              label: 'M2++ Money Supply',  unit: '$M', color: '#1a7a55' },
 ]
 
 const CustomTooltip = ({ active, payload, label, unit }: any) => {
   if (!active || !payload?.length) return null
   return (
-    <div className="bg-white border border-slate-200 rounded-lg shadow-lg px-3 py-2.5 text-left">
-      <p className="text-[11px] text-slate-400 mb-1">{label}</p>
-      <p className="text-[14px] font-semibold text-slate-800">{payload[0].value}{unit}</p>
+    <div className="bg-white border border-[var(--border)] rounded-lg shadow-sm px-3 py-2 text-left">
+      <p className="text-[11px] text-[var(--text-muted)] mb-1">{label}</p>
+      <p className="font-serif font-bold text-[var(--text-primary)]">{payload[0].value}{unit}</p>
     </div>
   )
 }
@@ -57,23 +57,26 @@ export default function Indicators() {
 
       {/* Series selector */}
       <div className="flex flex-wrap gap-2">
-        {SERIES.map(s => (
-          <button
-            key={s.key}
-            onClick={() => setSelectedKey(s.key)}
-            className={`text-[12px] font-medium px-3 py-1.5 rounded-full border transition-colors ${
-              selectedKey === s.key
-                ? 'bg-blue-700 text-white border-blue-700'
-                : 'bg-white text-slate-600 border-slate-200 hover:border-blue-300 hover:text-blue-700'
-            }`}
-          >
-            {s.label}
-          </button>
-        ))}
+        {SERIES.map(s => {
+          const isActive = selectedKey === s.key
+          return (
+            <button
+              key={s.key}
+              onClick={() => setSelectedKey(s.key)}
+              className={`px-3 py-1 rounded-[6px] text-[12px] font-medium border transition-colors ${
+                isActive
+                  ? 'bg-[var(--primary)] text-white border-transparent'
+                  : 'bg-[var(--surface-2)] text-[var(--text-secondary)] border-[var(--border)] hover:border-[var(--border-strong)]'
+              }`}
+            >
+              {s.label}
+            </button>
+          )
+        })}
       </div>
 
       {/* Chart card */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+      <div className="ed-card p-6">
         <div className="flex items-start justify-between mb-5">
           <div>
             <p className="section-label">{series.label}</p>
@@ -98,9 +101,9 @@ export default function Indicators() {
         ) : (
           <ResponsiveContainer width="100%" height={220}>
             <LineChart data={chartData} margin={{ top: 4, right: 4, bottom: 0, left: -16 }}>
-              <CartesianGrid vertical={false} stroke="#f1f5f9" />
-              <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#94a3b8' }} interval={5} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+              <CartesianGrid vertical={false} stroke="var(--surface-2)" />
+              <XAxis dataKey="date" tick={{ fontSize: 10, fill: 'var(--text-xmuted)', fontFamily: 'DM Mono, monospace' }} interval={5} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 10, fill: 'var(--text-xmuted)', fontFamily: 'DM Mono, monospace' }} axisLine={false} tickLine={false} />
               {selectedKey === 'yield_spread' && <ReferenceLine y={0} stroke="#e2e8f0" strokeDasharray="4 2" />}
               <Tooltip content={<CustomTooltip unit={series.unit} />} />
               <Line type="monotone" dataKey="value" stroke={series.color} strokeWidth={2} dot={false} />
@@ -110,14 +113,14 @@ export default function Indicators() {
       </div>
 
       {/* Data table */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-100">
+      <div className="ed-card overflow-hidden mt-6">
+        <div className="px-6 py-4 border-b border-[var(--border)]">
           <p className="section-label mb-0">Historical Data</p>
         </div>
         {isLoading ? <div className="p-6"><Skeleton className="h-40 w-full" /></div> : data && (
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-slate-50">
+              <thead className="bg-[var(--surface-2)]">
                 <tr>
                   <th className="table-th">Period</th>
                   {SERIES.map(s => <th key={s.key} className="table-th whitespace-nowrap">{s.label}</th>)}
@@ -125,11 +128,11 @@ export default function Indicators() {
               </thead>
               <tbody>
                 {[...data].reverse().slice(0, 24).map((row, i) => (
-                  <tr key={row.period_date} className={`hover:bg-slate-50 transition-colors ${i % 2 === 0 ? '' : 'bg-slate-50/40'}`}>
-                    <td className="table-td font-medium text-slate-900">{row.period_date.slice(0, 7)}</td>
+                  <tr key={row.period_date} className={`hover:bg-[var(--surface-2)] transition-colors ${i % 2 === 0 ? '' : 'bg-[var(--surface-2)]/40'}`}>
+                    <td className="table-td font-medium text-[var(--text-primary)]">{row.period_date.slice(0, 7)}</td>
                     {SERIES.map(s => (
                       <td key={s.key} className="table-td">
-                        {row[s.key] != null ? `${(+(row[s.key] as number)).toFixed(2)}${s.unit}` : <span className="text-slate-300">—</span>}
+                        {row[s.key] != null ? `${(+(row[s.key] as number)).toFixed(2)}${s.unit}` : <span className="text-[var(--text-xmuted)]">—</span>}
                       </td>
                     ))}
                   </tr>
