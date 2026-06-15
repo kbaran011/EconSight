@@ -29,6 +29,7 @@ dependencies = [
     "weasyprint>=62.0",
     "pypdf>=4.0",
     "nbconvert>=7.0",
+    "ipykernel>=6.0",
 ]
 
 [project.optional-dependencies]
