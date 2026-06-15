@@ -35,7 +35,7 @@ def _is_safe_sql(query: str) -> bool:
 
 
 def _text(response: object) -> str:
-    return response.choices[0].message.content or ""  # type: ignore[union-attr]
+    return response.choices[0].message.content or ""  # type: ignore[attr-defined]
 
 
 async def _classify(question: str) -> str:
