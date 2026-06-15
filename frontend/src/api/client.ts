@@ -1,6 +1,8 @@
 import axios from 'axios'
 
-const api = axios.create({ baseURL: 'http://localhost:8000' })
+const baseURL = import.meta.env.VITE_API_BASE_URL ?? ''
+
+const api = axios.create({ baseURL })
 
 export interface IndicatorRow {
   period_date: string
@@ -64,3 +66,16 @@ export const queryRAG = (question: string) =>
 
 export const downloadReport = () =>
   api.get('/api/report/pdf', { responseType: 'blob' }).then(r => r.data as Blob)
+
+export interface StatusResponse {
+  seeding_status: 'idle' | 'seeding' | 'ready' | 'error'
+  seeding_error: string | null
+  mart_row_count: number
+  latest_data_date: string | null
+  last_pipeline_run_at: string | null
+  last_pipeline_rows: number | null
+  groq_configured: boolean
+}
+
+export const fetchStatus = () =>
+  api.get<StatusResponse>('/api/status').then(r => r.data)
