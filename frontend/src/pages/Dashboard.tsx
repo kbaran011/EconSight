@@ -3,8 +3,8 @@ import { fetchHealthScore, fetchIndicators } from '../api/client'
 import type { IndicatorRow } from '../api/client'
 import { Skeleton } from '../components/ui/skeleton'
 import {
-  LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid,
-  ResponsiveContainer, ReferenceLine,
+  LineChart, Line, Bar, BarChart, Cell,
+  XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer,
 } from 'recharts'
 
 const INDICATORS: {
@@ -27,13 +27,20 @@ const INDICATORS: {
 ]
 
 function scoreColor(s: number) {
-  if (s >= 7) return { text: 'text-emerald-600', ring: '#059669', bg: '#ecfdf5', label: 'Strong' }
-  if (s >= 5) return { text: 'text-amber-600',   ring: '#d97706', bg: '#fffbeb', label: 'Moderate' }
-  return       { text: 'text-red-600',            ring: '#dc2626', bg: '#fef2f2', label: 'Weak' }
+  if (s >= 7) return { ring: '#1a7a55', label: 'Strong' }
+  if (s >= 5) return { ring: '#d97706', label: 'Moderate' }
+  return       { ring: '#c9483a',        label: 'Weak' }
+}
+
+function ringBg(ring: string): string {
+  if (ring === '#1a7a55') return 'rgba(26,122,85,0.10)'
+  if (ring === '#d97706') return 'rgba(217,119,6,0.10)'
+  return 'rgba(201,72,58,0.10)'
 }
 
 function ScoreGauge({ score }: { score: number }) {
-  const { ring, bg, label } = scoreColor(score)
+  const { ring, label } = scoreColor(score)
+  const bg = ringBg(ring)
   const r = 52
   const circ = 2 * Math.PI * r
   const dash = circ * (score / 10)
@@ -50,16 +57,16 @@ function ScoreGauge({ score }: { score: number }) {
             transform="rotate(-90 74 74)"
             style={{ transition: 'stroke-dasharray 1s ease' }}
           />
-          <text x="74" y="70" textAnchor="middle" fontSize="27" fontWeight="700" fontFamily="Inter, sans-serif" fill="#0f172a">
+          <text x="74" y="70" textAnchor="middle" fontSize="27" fontWeight="700" fontFamily="Source Serif 4, serif" fill="var(--primary)">
             {score.toFixed(1)}
           </text>
-          <text x="74" y="88" textAnchor="middle" fontSize="11" fontFamily="Inter, sans-serif" fill="#94a3b8">
+          <text x="74" y="88" textAnchor="middle" fontSize="11" fontFamily="Source Serif 4, serif" fill="var(--text-xmuted)">
             out of 10
           </text>
         </svg>
       </div>
       <div className="text-center">
-        <span className={`inline-flex items-center gap-1.5 text-[12px] font-semibold px-3 py-1 rounded-full`}
+        <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold px-3 py-1 rounded-full"
           style={{ color: ring, backgroundColor: bg }}>
           <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: ring }} />
           {label} Conditions
@@ -80,12 +87,13 @@ function MiniSparkline({ data, color }: { data: number[]; color: string }) {
   )
 }
 
-const ChartTooltip = ({ active, payload, label }: any) => {
+interface TooltipProps { active?: boolean; payload?: { value: number }[]; label?: string }
+const ChartTooltip = ({ active, payload, label }: TooltipProps) => {
   if (!active || !payload?.length) return null
   return (
-    <div className="bg-white border border-slate-200 rounded-lg shadow-lg px-3 py-2">
-      <p className="text-[11px] text-slate-400 mb-0.5">{label}</p>
-      <p className="text-[14px] font-semibold text-blue-700">{payload[0].value}</p>
+    <div className="bg-white rounded-lg border border-[var(--border)] shadow-sm px-3 py-2">
+      <p className="text-[11px] text-[var(--text-muted)] mb-0.5">{label}</p>
+      <p className="text-[14px] font-serif font-bold text-[var(--primary)]">{payload[0].value}</p>
     </div>
   )
 }
@@ -103,6 +111,8 @@ export default function Dashboard() {
     score: +h.score.toFixed(2),
   }))
 
+  const chartData = historyData ?? []
+
   function delta(key: keyof IndicatorRow) {
     const a = latest?.[key] as number | null
     const b = prev?.[key]   as number | null
@@ -119,8 +129,8 @@ export default function Dashboard() {
       {/* Header */}
       <div className="flex items-end justify-between">
         <div>
-          <p className="section-label">Overview</p>
-          <h1 className="text-2xl font-semibold text-slate-900">Economic Dashboard</h1>
+          <span className="page-eyebrow">Overview</span>
+          <h1 className="font-serif font-bold text-[28px] tracking-tight text-[var(--text-primary)]">Economic Dashboard</h1>
           <p className="text-sm text-slate-500 mt-0.5">Canadian macroeconomic conditions</p>
         </div>
         {latest && (
@@ -130,9 +140,9 @@ export default function Dashboard() {
         )}
       </div>
 
-      {/* Top row: gauge + sparkline */}
+      {/* Top row: gauge + bar chart trend */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+        <div className="ed-card p-6" style={{ animation: 'fadeSlideUp 0.4s ease-out both' }}>
           <p className="section-label">Composite Health Score</p>
           {healthQ.isLoading
             ? <Skeleton className="h-48 w-full rounded-xl" />
@@ -141,21 +151,24 @@ export default function Dashboard() {
               : <p className="text-red-500 text-sm">Failed to load</p>}
         </div>
 
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 lg:col-span-2">
+        <div className="ed-card p-6 lg:col-span-2" style={{ animation: 'fadeSlideUp 0.4s ease-out both', animationDelay: '80ms' }}>
           <p className="section-label">Health Score Trend</p>
           <p className="text-sm font-medium text-slate-700 mb-4">Last 18 months</p>
           {healthQ.isLoading
             ? <Skeleton className="h-44 w-full rounded-xl" />
-            : historyData && (
+            : chartData.length > 0 && (
               <ResponsiveContainer width="100%" height={160}>
-                <LineChart data={historyData} margin={{ top: 0, right: 4, bottom: 0, left: -16 }}>
-                  <CartesianGrid vertical={false} stroke="#f1f5f9" />
-                  <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#94a3b8' }} interval={3} axisLine={false} tickLine={false} />
-                  <YAxis domain={[0, 10]} tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-                  <ReferenceLine y={5} stroke="#e2e8f0" strokeDasharray="4 2" />
+                <BarChart data={chartData} margin={{ top: 0, right: 4, bottom: 0, left: -16 }}>
+                  <CartesianGrid vertical={false} stroke="var(--surface-2)" />
+                  <XAxis dataKey="date" tick={{ fontSize: 10, fill: 'var(--text-xmuted)', fontFamily: 'DM Mono, monospace' }} interval={3} axisLine={false} tickLine={false} />
+                  <YAxis domain={[0, 10]} tick={{ fontSize: 10, fill: 'var(--text-xmuted)', fontFamily: 'DM Mono, monospace' }} axisLine={false} tickLine={false} />
                   <Tooltip content={<ChartTooltip />} />
-                  <Line type="monotone" dataKey="score" stroke="#1d4ed8" strokeWidth={2} dot={false} />
-                </LineChart>
+                  <Bar dataKey="score" fill="#1a7a55">
+                    {chartData.map((_, i) => (
+                      <Cell key={i} fill="#1a7a55" fillOpacity={i === chartData.length - 1 ? 1 : 0.25} />
+                    ))}
+                  </Bar>
+                </BarChart>
               </ResponsiveContainer>
             )}
         </div>
@@ -170,7 +183,7 @@ export default function Dashboard() {
             </div>
           : latest
             ? <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {INDICATORS.map(({ key, label, unit, invert }) => {
+                {INDICATORS.map(({ key, label, unit, invert }, index) => {
                   const val  = latest[key] as number | null
                   const d    = delta(key)
                   const up   = d != null && d > 0
@@ -179,24 +192,49 @@ export default function Dashboard() {
                   const good = invert ? down : up
                   const bad  = invert ? up   : down
                   const spark = sparklineData(key)
-                  const sparkColor = good ? '#059669' : bad ? '#dc2626' : '#94a3b8'
+                  const sparkColor = good ? '#1a7a55' : bad ? '#c9483a' : '#94a3b8'
+
+                  const deltaClass = up && good
+                    ? 'delta delta-up-good'
+                    : up && bad
+                    ? 'delta delta-up-bad'
+                    : down && good
+                    ? 'delta delta-dn-good'
+                    : down && bad
+                    ? 'delta delta-dn-bad'
+                    : 'delta delta-neutral'
 
                   return (
-                    <div key={key} className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 flex flex-col gap-2">
+                    <div
+                      key={key}
+                      className="ed-card p-4 flex flex-col gap-2 transition-all duration-150 hover:-translate-y-px hover:shadow-[0_4px_16px_rgba(26,122,85,0.08)]"
+                      style={{
+                        borderTop: `3px solid ${invert ? 'var(--accent)' : 'var(--primary)'}`,
+                        animation: 'fadeSlideUp 0.4s ease-out both',
+                        animationDelay: `${index * 60}ms`,
+                      }}
+                    >
                       <p className="stat-label">{label}</p>
                       <div className="flex items-end justify-between gap-2">
                         <div>
                           <p className="stat-value">
-                            {val != null ? `${(+val).toFixed(2)}${unit}` : '—'}
+                            {val != null ? `${(+val).toFixed(2)}` : '—'}<span className="text-[14px] font-normal text-[var(--text-muted)]">{unit}</span>
                           </p>
                           {d != null && (
-                            <p className={`text-[11px] font-medium mt-0.5 ${good ? 'text-emerald-600' : bad ? 'text-red-500' : 'text-slate-400'}`}>
+                            <p className={deltaClass}>
                               {up ? '▲' : down ? '▼' : '–'} {Math.abs(d).toFixed(2)}{unit}
                             </p>
                           )}
                         </div>
                       </div>
-                      {spark.length > 2 && <MiniSparkline data={spark} color={sparkColor} />}
+                      {spark.length > 2 && (
+                        <div
+                          className="h-7 rounded bg-[var(--surface-2)] mt-1 overflow-hidden"
+                          style={{ animation: 'fadeSlideUp 0.3s ease-out both', animationDelay: '0.2s' }}
+                        >
+                          <MiniSparkline data={spark} color={sparkColor} />
+                        </div>
+                      )}
                     </div>
                   )
                 })}
