@@ -29,7 +29,7 @@ def generate_full_report() -> bytes:
 
         result = subprocess.run(
             [
-                sys.executable, "-m", "jupyter", "nbconvert",
+                sys.executable, "-m", "nbconvert",
                 "--execute",
                 "--to", to_fmt,
                 "--ExecutePreprocessor.timeout=600",
