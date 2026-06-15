@@ -1,9 +1,5 @@
 from __future__ import annotations
 
-import shutil
-import subprocess
-import sys
-import tempfile
 from pathlib import Path
 
 from econsight.config import get_logger
@@ -12,41 +8,33 @@ from econsight.db.connection import PROJECT_ROOT
 logger = get_logger(__name__)
 
 _NOTEBOOK = PROJECT_ROOT / "notebooks" / "phase2_analysis.ipynb"
-_LATEX_AVAILABLE: bool = shutil.which("xelatex") is not None
 
 
 def generate_full_report() -> bytes:
-    """Produce a PDF of the Phase 2 notebook via nbconvert.
+    """Execute the Phase 2 notebook and return a PDF via WeasyPrint.
 
     Always call as: await asyncio.to_thread(generate_full_report)
     This function is blocking — do not call directly from async code.
     """
-    with tempfile.TemporaryDirectory() as tmpdir:
-        output_stem = "phase2_analysis"
-        to_fmt = "pdf" if _LATEX_AVAILABLE else "html"
-        if not _LATEX_AVAILABLE:
-            logger.warning("full_report.latex_unavailable", fallback="html+weasyprint")
+    import nbformat
+    from nbconvert import HTMLExporter
+    from nbconvert.preprocessors import ExecutePreprocessor
+    from weasyprint import HTML
 
-        result = subprocess.run(
-            [
-                sys.executable, "-m", "nbconvert",
-                "--execute",
-                "--to", to_fmt,
-                "--ExecutePreprocessor.timeout=600",
-                "--output", output_stem,
-                "--output-dir", tmpdir,
-                str(_NOTEBOOK),
-            ],
-            capture_output=True,
-            text=True,
-            timeout=660,
-        )
-        if result.returncode != 0:
-            raise RuntimeError(f"nbconvert failed:\n{result.stderr[:500]}")
+    logger.info("full_report.start", notebook=str(_NOTEBOOK))
 
-        if to_fmt == "pdf":
-            return (Path(tmpdir) / f"{output_stem}.pdf").read_bytes()
-        else:
-            from weasyprint import HTML
-            html_path = Path(tmpdir) / f"{output_stem}.html"
-            return bytes(HTML(filename=str(html_path)).write_pdf())
+    with open(_NOTEBOOK) as f:
+        nb = nbformat.read(f, as_version=4)
+
+    ep = ExecutePreprocessor(timeout=600, kernel_name="python3")
+    ep.preprocess(nb, {"metadata": {"path": str(_NOTEBOOK.parent)}})
+    logger.info("full_report.executed")
+
+    exporter = HTMLExporter()
+    exporter.exclude_input = True  # cleaner output — hide code cells
+    body, _resources = exporter.from_notebook_node(nb)
+    logger.info("full_report.converted_html")
+
+    pdf_bytes = bytes(HTML(string=body, base_url=str(_NOTEBOOK.parent)).write_pdf())
+    logger.info("full_report.pdf_done", size_kb=len(pdf_bytes) // 1024)
+    return pdf_bytes
