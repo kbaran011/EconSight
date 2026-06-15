@@ -30,7 +30,7 @@ function CopyButton({ text }: { text: string }) {
   return (
     <button
       onClick={copy}
-      className="text-[11px] font-medium text-slate-400 hover:text-slate-700 border border-slate-200 rounded px-2 py-0.5 transition-colors"
+      className="text-[11px] font-medium border rounded px-2 py-0.5 transition-colors text-[var(--text-muted)] border-[var(--border)] hover:text-[var(--primary)] hover:border-[var(--primary)]"
     >
       {copied ? '✓ Copied' : 'Copy'}
     </button>
@@ -41,48 +41,34 @@ function AnswerCard({ entry, index, total }: { entry: HistoryEntry; index: numbe
   const { question, response } = entry
   const isLatest = index === total - 1
   return (
-    <div className={`bg-white rounded-xl border shadow-sm overflow-hidden transition-opacity ${isLatest ? 'border-blue-200' : 'border-slate-200 opacity-60'}`}>
+    <div className={`ed-card p-5 border-l-[3px] border-l-[var(--primary)] mb-4 ${isLatest ? '' : 'opacity-60'}`}>
       {/* Question bar */}
-      <div className={`px-6 py-3.5 border-b flex items-center justify-between ${isLatest ? 'bg-blue-50 border-blue-100' : 'bg-slate-50 border-slate-100'}`}>
-        <div>
-          <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-0.5">Question</p>
-          <p className="text-[14px] font-medium text-slate-800">{question}</p>
-        </div>
+      <div className="flex items-start justify-between mb-2">
+        <p className="font-serif font-semibold text-[16px] text-[var(--text-primary)]">{question}</p>
         <CopyButton text={response.answer} />
       </div>
 
-      {/* Body */}
-      <div className="px-6 py-5 space-y-4">
-        {/* Method */}
-        <span className={`inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded-full border ${
-          response.query_type === 'sql'
-            ? 'bg-violet-50 text-violet-700 border-violet-200'
-            : 'bg-blue-50 text-blue-700 border-blue-200'
-        }`}>
-          <span className="w-1.5 h-1.5 rounded-full bg-current" />
-          {METHOD_LABEL[response.query_type] ?? response.query_type}
-        </span>
+      {/* Method badge */}
+      <span className="inline-flex items-center gap-1.5 bg-[var(--surface-2)] text-[var(--text-muted)] text-[10px] font-mono px-2 py-0.5 rounded">
+        {METHOD_LABEL[response.query_type] ?? response.query_type}
+      </span>
 
-        {/* Answer */}
-        <div>
-          <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">Analysis</p>
-          <p className="text-[14px] text-slate-700 leading-relaxed whitespace-pre-wrap">{response.answer}</p>
-        </div>
+      {/* Answer */}
+      <p className="font-serif text-[15px] text-[var(--text-secondary)] leading-relaxed mt-3 whitespace-pre-wrap">{response.answer}</p>
 
-        {/* Sources */}
-        {response.sources.length > 0 && (
-          <div className="pt-3 border-t border-slate-100">
-            <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">Sources</p>
-            <div className="flex flex-wrap gap-1.5">
-              {response.sources.map((s, i) => (
-                <span key={i} className="text-[12px] text-slate-500 bg-slate-50 border border-slate-200 rounded px-2.5 py-1">
-                  {s.replace(/¶$/, '').trim()}
-                </span>
-              ))}
-            </div>
+      {/* Sources */}
+      {response.sources.length > 0 && (
+        <div className="pt-3 border-t border-[var(--border)] mt-4">
+          <p className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-2">Sources</p>
+          <div className="flex flex-wrap gap-1.5">
+            {response.sources.map((s, i) => (
+              <span key={i} className="bg-[var(--surface-2)] border border-[var(--border)] text-[10px] font-mono text-[var(--text-muted)] px-2 py-0.5 rounded">
+                {s.replace(/¶$/, '').trim()}
+              </span>
+            ))}
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -129,12 +115,12 @@ export default function Ask() {
             onChange={e => setQuestion(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && handleSubmit(question)}
             placeholder="e.g. What is the current inflation trend in Canada?"
-            className="flex-1 h-10 rounded-md border border-slate-200 bg-slate-50 px-3 text-[14px] text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-500 transition"
+            className="bg-white border border-[var(--border)] rounded-lg px-4 py-2.5 text-[14px] font-sans text-[var(--text-primary)] placeholder:text-[var(--text-xmuted)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent flex-1"
           />
           <button
             onClick={() => handleSubmit(question)}
             disabled={mutation.isPending || !question.trim()}
-            className="bg-blue-700 hover:bg-blue-800 disabled:bg-blue-300 text-white text-[13px] font-medium px-5 h-10 rounded-md transition-colors"
+            className="bg-[var(--primary)] text-white font-sans font-semibold text-[13px] px-5 py-2.5 rounded-[6px] hover:bg-[var(--primary-dark)] transition-colors disabled:opacity-50"
           >
             {mutation.isPending ? 'Analysing…' : 'Ask'}
           </button>
@@ -142,14 +128,14 @@ export default function Ask() {
 
         {/* Example chips */}
         <div className="mt-3">
-          <p className="text-[11px] text-slate-400 mb-1.5">Try an example</p>
+          <p className="text-[11px] text-[var(--text-muted)] mb-1.5">Try an example</p>
           <div className="flex flex-wrap gap-1.5">
             {EXAMPLES.map(q => (
               <button
                 key={q}
                 onClick={() => { setQuestion(q); handleSubmit(q) }}
                 disabled={mutation.isPending}
-                className="text-[12px] text-slate-600 bg-slate-100 hover:bg-blue-50 hover:text-blue-700 border border-slate-200 hover:border-blue-200 rounded-full px-3 py-1 transition-colors disabled:opacity-40"
+                className="bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text-secondary)] text-[12px] px-3 py-1.5 rounded-[6px] hover:border-[var(--primary)] hover:text-[var(--primary)] transition-colors cursor-pointer disabled:opacity-40"
               >
                 {q}
               </button>
@@ -160,11 +146,11 @@ export default function Ask() {
 
       {/* Loading */}
       {mutation.isPending && (
-        <div className="bg-white rounded-xl border border-blue-100 shadow-sm p-5">
-          <div className="flex items-center gap-3 text-slate-500 text-[13px]">
+        <div className="bg-white rounded-xl border border-[var(--border)] shadow-sm p-5">
+          <div className="flex items-center gap-3 text-[var(--text-secondary)] text-[13px]">
             <span className="flex gap-1">
               {[0, 1, 2].map(i => (
-                <span key={i} className="w-2 h-2 rounded-full bg-blue-400 animate-bounce" style={{ animationDelay: `${i * 0.15}s` }} />
+                <span key={i} className="w-2 h-2 rounded-full bg-[var(--primary)] animate-bounce" style={{ animationDelay: `${i * 0.15}s` }} />
               ))}
             </span>
             Retrieving and analysing economic data…
@@ -193,7 +179,7 @@ export default function Ask() {
 
       {/* Empty state */}
       {history.length === 0 && !mutation.isPending && !mutation.isError && (
-        <div className="text-center py-12 text-slate-400">
+        <div className="text-center py-12 text-[var(--text-muted)]">
           <p className="text-[32px] mb-2">💬</p>
           <p className="text-[14px]">Ask a question above to get started</p>
         </div>
