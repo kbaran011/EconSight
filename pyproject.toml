@@ -28,6 +28,7 @@ dependencies = [
     "beautifulsoup4>=4.12",
     "weasyprint>=62.0",
     "pypdf>=4.0",
+    "nbconvert>=7.0",
 ]
 
 [project.optional-dependencies]
