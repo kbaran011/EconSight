@@ -186,7 +186,7 @@ All animations are CSS-only (no additional libraries required).
 | File | Change |
 |---|---|
 | `frontend/index.html` | Replace Inter with Source Serif 4 + DM Sans + DM Mono |
-| `frontend/tailwind.config.ts` | Extend `fontFamily`: `serif: ['Source Serif 4', 'serif']`, `sans: ['DM Sans', 'sans-serif']`, `mono: ['DM Mono', 'monospace']`; extend `colors` with the token palette |
+| `frontend/tailwind.config.ts` | Extend `fontFamily` only: `serif: ['Source Serif 4', 'serif']`, `sans: ['DM Sans', 'sans-serif']`, `mono: ['DM Mono', 'monospace']`. Do **not** extend `colors` — all colour references use CSS-variable arbitrary-value syntax (`bg-[var(--primary)]`, etc.) which works without Tailwind color keys |
 | `frontend/src/index.css` | Full CSS variable + utility class rewrite |
 | `frontend/src/App.tsx` | Nav (jade bg, DataFreshness restyle, new layout), Footer, page wrapper |
 | `frontend/src/pages/Dashboard.tsx` | Score card (SVG font attrs), trend bar chart, indicator grid |
