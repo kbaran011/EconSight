@@ -1,0 +1,157 @@
+<h2>EconSight Logo Options</h2>
+<p class="subtitle">Current logo is a blue rounded square with "ES" text. Pick a direction.</p>
+
+<style>
+  .logo-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 8px;
+  }
+  .logo-nav {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-family: Inter, sans-serif;
+  }
+  .logo-nav span.brand {
+    font-size: 14px;
+    font-weight: 600;
+    color: #0f172a;
+    letter-spacing: -0.02em;
+  }
+  .logo-large {
+    width: 56px;
+    height: 56px;
+  }
+  .logo-small {
+    width: 28px;
+    height: 28px;
+  }
+  .size-label {
+    font-size: 11px;
+    color: #94a3b8;
+    font-family: monospace;
+  }
+</style>
+
+<div class="cards">
+
+  <!-- Option A: Current -->
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#f8fafc; display:flex; flex-direction:column; align-items:center; gap:16px; padding:24px">
+      <div class="logo-row">
+        <div class="logo-nav">
+          <svg width="28" height="28" viewBox="0 0 28 28">
+            <rect width="28" height="28" rx="6" fill="#1d4ed8"/>
+            <text x="14" y="19" text-anchor="middle" font-size="11" font-weight="700" font-family="Inter,sans-serif" fill="white" letter-spacing="-0.5">ES</text>
+          </svg>
+          <span class="brand">EconSight</span>
+        </div>
+        <span class="size-label">nav</span>
+      </div>
+      <svg class="logo-large" viewBox="0 0 56 56">
+        <rect width="56" height="56" rx="12" fill="#1d4ed8"/>
+        <text x="28" y="38" text-anchor="middle" font-size="22" font-weight="700" font-family="Inter,sans-serif" fill="white" letter-spacing="-1">ES</text>
+      </svg>
+      <span class="size-label">standalone</span>
+    </div>
+    <div class="card-body">
+      <h3>A — Current (Text Monogram)</h3>
+      <p>Blue rounded square with "ES" initials. Simple and professional but generic.</p>
+    </div>
+  </div>
+
+  <!-- Option B: Trend line -->
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#f8fafc; display:flex; flex-direction:column; align-items:center; gap:16px; padding:24px">
+      <div class="logo-row">
+        <div class="logo-nav">
+          <svg width="28" height="28" viewBox="0 0 28 28">
+            <rect width="28" height="28" rx="6" fill="#1d4ed8"/>
+            <!-- upward trend line -->
+            <polyline points="5,21 10,15 16,17 23,7" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            <!-- dot at top -->
+            <circle cx="23" cy="7" r="2" fill="white"/>
+          </svg>
+          <span class="brand">EconSight</span>
+        </div>
+        <span class="size-label">nav</span>
+      </div>
+      <svg class="logo-large" viewBox="0 0 56 56">
+        <rect width="56" height="56" rx="12" fill="#1d4ed8"/>
+        <polyline points="9,43 20,31 32,35 47,13" stroke="white" stroke-width="4.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="47" cy="13" r="4" fill="white"/>
+      </svg>
+      <span class="size-label">standalone</span>
+    </div>
+    <div class="card-body">
+      <h3>B — Trend Line</h3>
+      <p>An upward economic trend line with endpoint dot. Communicates "data & growth" instantly.</p>
+    </div>
+  </div>
+
+  <!-- Option C: Bar chart -->
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#f8fafc; display:flex; flex-direction:column; align-items:center; gap:16px; padding:24px">
+      <div class="logo-row">
+        <div class="logo-nav">
+          <svg width="28" height="28" viewBox="0 0 28 28">
+            <rect width="28" height="28" rx="6" fill="#1d4ed8"/>
+            <!-- 3 bars ascending -->
+            <rect x="5" y="17" width="4.5" height="6" rx="1" fill="rgba(255,255,255,0.5)"/>
+            <rect x="11.5" y="12" width="4.5" height="11" rx="1" fill="rgba(255,255,255,0.8)"/>
+            <rect x="18" y="6" width="4.5" height="17" rx="1" fill="white"/>
+          </svg>
+          <span class="brand">EconSight</span>
+        </div>
+        <span class="size-label">nav</span>
+      </div>
+      <svg class="logo-large" viewBox="0 0 56 56">
+        <rect width="56" height="56" rx="12" fill="#1d4ed8"/>
+        <rect x="9" y="35" width="9" height="12" rx="2" fill="rgba(255,255,255,0.45)"/>
+        <rect x="23" y="24" width="9" height="23" rx="2" fill="rgba(255,255,255,0.7)"/>
+        <rect x="37" y="12" width="9" height="35" rx="2" fill="white"/>
+      </svg>
+      <span class="size-label">standalone</span>
+    </div>
+    <div class="card-body">
+      <h3>C — Bar Chart</h3>
+      <p>Three ascending bars — classic financial/analytics icon. Reads clearly at small sizes.</p>
+    </div>
+  </div>
+
+  <!-- Option D: Pulse / line on grid -->
+  <div class="card" data-choice="d" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#f8fafc; display:flex; flex-direction:column; align-items:center; gap:16px; padding:24px">
+      <div class="logo-row">
+        <div class="logo-nav">
+          <svg width="28" height="28" viewBox="0 0 28 28">
+            <rect width="28" height="28" rx="6" fill="#1d4ed8"/>
+            <!-- subtle grid lines -->
+            <line x1="5" y1="14" x2="23" y2="14" stroke="rgba(255,255,255,0.2)" stroke-width="0.75"/>
+            <!-- pulse line: flat, spike up, flat -->
+            <polyline points="4,14 8,14 11,7 14,19 17,14 23,14" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span class="brand">EconSight</span>
+        </div>
+        <span class="size-label">nav</span>
+      </div>
+      <svg class="logo-large" viewBox="0 0 56 56">
+        <rect width="56" height="56" rx="12" fill="#1d4ed8"/>
+        <line x1="8" y1="28" x2="48" y2="28" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+        <polyline points="7,28 15,28 21,12 28,40 35,28 48,28" stroke="white" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="size-label">standalone</span>
+    </div>
+    <div class="card-body">
+      <h3>D — Pulse / Vitals</h3>
+      <p>ECG-style economic pulse line. "EconSight" as a health monitor — distinctive and memorable.</p>
+    </div>
+  </div>
+
+</div>

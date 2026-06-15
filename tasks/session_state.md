@@ -3,10 +3,10 @@
 > Update this file at the end of every session before stopping.
 
 ## Last Updated
-2026-06-05
+2026-06-08
 
 ## Current Phase
-**Phase 3 — Consulting Interface** (Weeks 7–9)
+**Portfolio Hardening** — interview-ready demo
 
 ## What's Done
 
@@ -70,11 +70,22 @@ Phase 3 fully complete — all pages implemented and verified:
 - [x] CI extended: frontend job (tsc -b + eslint + build), python-version → 3.12
 - [x] README Docker quickstart + env var table + demo placeholder
 
+## Portfolio Hardening (2026-06-08)
+- [x] Auto-seed on Docker boot (`AUTO_SEED`, background task, `/api/status`)
+- [x] Docker assets: notebooks/, jupyter+nbconvert in prod deps
+- [x] Frontend relative API URL for nginx proxy
+- [x] All 9 indicators in Dashboard + Indicators UI
+- [x] Data freshness badge + refresh button + mobile nav
+- [x] About page honest copy; Phase 4 marked complete
+- [x] Docker CI smoke test + weekly pipeline cron workflow
+- [x] README interview pitch + "what I'd add at scale"
+
 ## Remaining (User-driven)
 - [ ] Consulting deck: Problem → Data Sources → Architecture → Key Findings → Forecasts → Demo → Next Steps
 - [ ] Loom demo (3–5 min): Dashboard → Indicators → Ask → Report — add URL to README
-- [ ] Install Docker Desktop to test docker compose locally
-- [ ] Push to GitHub and verify CI passes (all 3 jobs: lint, test, frontend)
+- [ ] Commit `notebooks/phase2_report.html` for Docker RAG (un-gitignored)
+- [ ] Test `docker compose up` locally with GROQ_API_KEY
+- [ ] Push to GitHub and verify CI passes (lint, test, frontend, docker)
 
 ## Stack Quick Reference
 - Backend: `cd "AI PROJECT/EconSight" && uvicorn econsight.api.main:app --reload`

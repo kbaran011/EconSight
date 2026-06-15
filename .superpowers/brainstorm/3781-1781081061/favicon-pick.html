@@ -1,0 +1,125 @@
+<h2>Pick the favicon design</h2>
+<p class="subtitle">Which icon should appear in the browser tab? Shown at 32×32 (actual favicon size).</p>
+
+<style>
+  .favicon-preview {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 24px;
+    background: #f8fafc;
+  }
+  .tab-mock {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #e8eaed;
+    border-radius: 8px 8px 0 0;
+    padding: 6px 14px 6px 8px;
+    font-family: Inter, sans-serif;
+    font-size: 12px;
+    color: #3c4043;
+    width: fit-content;
+  }
+</style>
+
+<div class="cards">
+
+  <!-- A: ES monogram -->
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="favicon-preview">
+      <div class="tab-mock">
+        <svg width="16" height="16" viewBox="0 0 28 28">
+          <rect width="28" height="28" rx="6" fill="#1d4ed8"/>
+          <text x="14" y="19" text-anchor="middle" font-size="11" font-weight="700" font-family="Inter,sans-serif" fill="white" letter-spacing="-0.5">ES</text>
+        </svg>
+        EconSight
+      </div>
+      <svg width="32" height="32" viewBox="0 0 28 28">
+        <rect width="28" height="28" rx="6" fill="#1d4ed8"/>
+        <text x="14" y="19" text-anchor="middle" font-size="11" font-weight="700" font-family="Inter,sans-serif" fill="white" letter-spacing="-0.5">ES</text>
+      </svg>
+      <span style="font-size:11px;color:#94a3b8">32px</span>
+    </div>
+    <div class="card-body">
+      <h3>A — ES Monogram</h3>
+      <p>Blue square with "ES" — matches the nav logo exactly.</p>
+    </div>
+  </div>
+
+  <!-- B: Trend line -->
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="favicon-preview">
+      <div class="tab-mock">
+        <svg width="16" height="16" viewBox="0 0 28 28">
+          <rect width="28" height="28" rx="6" fill="#1d4ed8"/>
+          <polyline points="5,21 10,15 16,17 23,7" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="23" cy="7" r="2" fill="white"/>
+        </svg>
+        EconSight
+      </div>
+      <svg width="32" height="32" viewBox="0 0 28 28">
+        <rect width="28" height="28" rx="6" fill="#1d4ed8"/>
+        <polyline points="5,21 10,15 16,17 23,7" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="23" cy="7" r="2" fill="white"/>
+      </svg>
+      <span style="font-size:11px;color:#94a3b8">32px</span>
+    </div>
+    <div class="card-body">
+      <h3>B — Trend Line</h3>
+      <p>Upward trend with endpoint dot. Reads well at 16px tab size.</p>
+    </div>
+  </div>
+
+  <!-- C: Bar chart -->
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="favicon-preview">
+      <div class="tab-mock">
+        <svg width="16" height="16" viewBox="0 0 28 28">
+          <rect width="28" height="28" rx="6" fill="#1d4ed8"/>
+          <rect x="5" y="17" width="4.5" height="6" rx="1" fill="rgba(255,255,255,0.5)"/>
+          <rect x="11.5" y="12" width="4.5" height="11" rx="1" fill="rgba(255,255,255,0.8)"/>
+          <rect x="18" y="6" width="4.5" height="17" rx="1" fill="white"/>
+        </svg>
+        EconSight
+      </div>
+      <svg width="32" height="32" viewBox="0 0 28 28">
+        <rect width="28" height="28" rx="6" fill="#1d4ed8"/>
+        <rect x="5" y="17" width="4.5" height="6" rx="1" fill="rgba(255,255,255,0.5)"/>
+        <rect x="11.5" y="12" width="4.5" height="11" rx="1" fill="rgba(255,255,255,0.8)"/>
+        <rect x="18" y="6" width="4.5" height="17" rx="1" fill="white"/>
+      </svg>
+      <span style="font-size:11px;color:#94a3b8">32px</span>
+    </div>
+    <div class="card-body">
+      <h3>C — Bar Chart</h3>
+      <p>Three ascending bars. Recognisable analytics icon at tiny sizes.</p>
+    </div>
+  </div>
+
+  <!-- D: Pulse -->
+  <div class="card" data-choice="d" onclick="toggleSelect(this)">
+    <div class="favicon-preview">
+      <div class="tab-mock">
+        <svg width="16" height="16" viewBox="0 0 28 28">
+          <rect width="28" height="28" rx="6" fill="#1d4ed8"/>
+          <line x1="5" y1="14" x2="23" y2="14" stroke="rgba(255,255,255,0.2)" stroke-width="0.75"/>
+          <polyline points="4,14 8,14 11,7 14,19 17,14 23,14" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        EconSight
+      </div>
+      <svg width="32" height="32" viewBox="0 0 28 28">
+        <rect width="28" height="28" rx="6" fill="#1d4ed8"/>
+        <line x1="5" y1="14" x2="23" y2="14" stroke="rgba(255,255,255,0.2)" stroke-width="0.75"/>
+        <polyline points="4,14 8,14 11,7 14,19 17,14 23,14" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span style="font-size:11px;color:#94a3b8">32px</span>
+    </div>
+    <div class="card-body">
+      <h3>D — Pulse</h3>
+      <p>ECG-style line. Distinctive at tab size but detailed.</p>
+    </div>
+  </div>
+
+</div>

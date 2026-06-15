@@ -48,12 +48,10 @@ function DataFreshness() {
   const isError = data?.seeding_status === 'error'
   const isSeeding = data?.seeding_status === 'seeding'
 
-  let label = '…'
-  if (isError) label = 'Seed failed'
-  else if (isSeeding) label = 'Seeding…'
-  else if (!data) label = '…'
-  else if (period) label = period
-  else label = 'No data'
+  const label = isError ? 'Seed failed'
+    : isSeeding ? 'Seeding…'
+    : !data ? '…'
+    : period ?? 'No data'
 
   return (
     <div className="hidden xl:flex items-center gap-1.5 shrink-0">
