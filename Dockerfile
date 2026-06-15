@@ -20,9 +20,6 @@ RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/wh
 
 RUN pip install --no-cache-dir .
 
-# Register the Python kernel so nbconvert --execute can find it
-RUN python -m ipykernel install --sys-prefix
-
 ENV APP_ROOT=/app
 
 EXPOSE 8000

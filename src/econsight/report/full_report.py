@@ -7,34 +7,26 @@ from econsight.db.connection import PROJECT_ROOT
 
 logger = get_logger(__name__)
 
-_NOTEBOOK = PROJECT_ROOT / "notebooks" / "phase2_analysis.ipynb"
+_HTML_REPORT = PROJECT_ROOT / "notebooks" / "phase2_report.html"
 
 
 def generate_full_report() -> bytes:
-    """Execute the Phase 2 notebook and return a PDF via WeasyPrint.
+    """Convert the pre-generated Phase 2 HTML report to PDF via WeasyPrint.
 
+    The HTML report is committed to the repo and included in the Docker image.
     Always call as: await asyncio.to_thread(generate_full_report)
-    This function is blocking — do not call directly from async code.
     """
-    import nbformat
-    from nbconvert import HTMLExporter
-    from nbconvert.preprocessors import ExecutePreprocessor
     from weasyprint import HTML
 
-    logger.info("full_report.start", notebook=str(_NOTEBOOK))
+    if not _HTML_REPORT.exists():
+        raise FileNotFoundError(
+            f"Pre-generated report not found at {_HTML_REPORT}. "
+            "Run the Phase 2 notebook locally and commit notebooks/phase2_report.html."
+        )
 
-    with open(_NOTEBOOK) as f:
-        nb = nbformat.read(f, as_version=4)
-
-    ep = ExecutePreprocessor(timeout=600, kernel_name="python3")
-    ep.preprocess(nb, {"metadata": {"path": str(_NOTEBOOK.parent)}})
-    logger.info("full_report.executed")
-
-    exporter = HTMLExporter()
-    exporter.exclude_input = True  # cleaner output — hide code cells
-    body, _resources = exporter.from_notebook_node(nb)
-    logger.info("full_report.converted_html")
-
-    pdf_bytes = bytes(HTML(string=body, base_url=str(_NOTEBOOK.parent)).write_pdf())
-    logger.info("full_report.pdf_done", size_kb=len(pdf_bytes) // 1024)
+    logger.info("full_report.start", path=str(_HTML_REPORT))
+    pdf_bytes = bytes(
+        HTML(filename=str(_HTML_REPORT), base_url=str(_HTML_REPORT.parent)).write_pdf()
+    )
+    logger.info("full_report.done", size_kb=len(pdf_bytes) // 1024)
     return pdf_bytes
