@@ -65,3 +65,33 @@ jobs:
       - run: npx tsc -b
       - run: npx eslint src/
       - run: npm run build
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create .env.docker for CI
+        run: |
+          cat > .env.docker <<'EOF'
+          POSTGRES_PASSWORD=ci_password
+          GROQ_API_KEY=
+          AUTO_SEED=false
+          AUTO_SEED_MODELS=false
+          EOF
+      - name: Build and start stack
+        run: |
+          docker compose --env-file .env.docker build
+          docker compose --env-file .env.docker up -d
+      - name: Wait for backend health
+        run: |
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost/api/ping; then exit 0; fi
+            sleep 5
+          done
+          docker compose logs
+          exit 1
+      - name: Smoke test status endpoint
+        run: curl -sf http://localhost/api/status | python3 -c "import json,sys; d=json.load(sys.stdin); assert d['seeding_status'] in ('idle','ready')"
+      - name: Tear down
+        if: always()
+        run: docker compose down -v

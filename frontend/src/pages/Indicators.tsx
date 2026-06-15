@@ -21,7 +21,8 @@ const SERIES: { key: keyof IndicatorRow; label: string; unit: string; color: str
   { key: 'm2pp',              label: 'M2++ Money Supply',  unit: '$M', color: '#1a7a55' },
 ]
 
-const CustomTooltip = ({ active, payload, label, unit }: any) => {
+interface TooltipProps { active?: boolean; payload?: { value: number }[]; label?: string; unit?: string }
+const CustomTooltip = ({ active, payload, label, unit }: TooltipProps) => {
   if (!active || !payload?.length) return null
   return (
     <div className="bg-white border border-[var(--border)] rounded-lg shadow-sm px-3 py-2 text-left">

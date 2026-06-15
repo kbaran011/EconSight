@@ -1,0 +1,39 @@
+name: Scheduled Pipeline
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"  # Mondays 06:00 UTC
+  workflow_dispatch:
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: econsight
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e .
+      - name: Init database schema
+        env:
+          DB_URL: postgresql://postgres:password@localhost:5432/econsight
+        run: python -c "import asyncio; from econsight.db.connection import init_db; asyncio.run(init_db())"
+      - name: Run ingestion pipeline
+        env:
+          DB_URL: postgresql://postgres:password@localhost:5432/econsight
+        run: econsight-run

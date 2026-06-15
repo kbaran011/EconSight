@@ -7,12 +7,14 @@ import {
   CartesianGrid, ResponsiveContainer, Legend,
 } from 'recharts'
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+interface TooltipEntry { name: string; value: number | null }
+interface TooltipProps { active?: boolean; payload?: TooltipEntry[]; label?: string }
+const CustomTooltip = ({ active, payload, label }: TooltipProps) => {
   if (!active || !payload?.length) return null
   return (
     <div className="bg-white border border-[var(--border)] rounded-lg shadow-sm px-3 py-2 text-left min-w-[140px]">
       <p className="text-[11px] text-[var(--text-muted)] mb-2">{label}</p>
-      {payload.map((p: any) => p.value != null && (
+      {payload.map((p) => p.value != null && (
         <div key={p.name} className="flex justify-between gap-4 text-[12px]">
           <span className="text-[var(--text-muted)]">{p.name}</span>
           <span className="font-serif font-bold text-[var(--text-primary)]">{typeof p.value === 'number' ? p.value.toFixed(4) : p.value}</span>

@@ -14,7 +14,7 @@ htmlcov/
 *.db
 models/artefacts/*
 !models/artefacts/.gitkeep
-notebooks/phase2_report.html
+models/chroma_db/
 .ipynb_checkpoints/
 .worktrees/
 .env.docker
