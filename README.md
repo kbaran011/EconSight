@@ -41,6 +41,24 @@ Open **http://localhost**. Data fetches and models train in the background (~3�
 - **PDF report** — one-click executive brief via WeasyPrint
 - **69 tests** — pytest suite covering clients, loader, and API; full CI on every push
 
+## Power BI / BI Tool Integration
+
+Live data is accessible to any BI tool via public CSV endpoints — no database credentials required.
+
+| Tool | Connection |
+|---|---|
+| Power BI Desktop | Get Data → Web → paste endpoint URL |
+| Excel | Data → From Web → paste endpoint URL |
+| IBM Cognos | Manage → Data server connections → REST |
+| Tableau | Web Data Connector → paste URL |
+
+**Endpoints (no auth required):**
+- `GET /api/export/indicators.csv` — full macro mart (13 columns, 36 months)
+- `GET /api/export/health-score.csv` — composite score history
+- `GET /api/export/forecasts.csv` — VAR/XGBoost forecasts with scenario bands
+
+See [`powerbi/README.md`](powerbi/README.md) for step-by-step connection instructions.
+
 ## What I'd Add at Scale
 
 - Airflow for orchestration with SLA monitoring
