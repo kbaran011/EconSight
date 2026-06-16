@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from econsight.api.routers import forecasts, indicators, rag, report, status
+from econsight.api.routers import export, forecasts, indicators, rag, report, status
 from econsight.config import get_logger, settings
 
 logger = get_logger(__name__)
@@ -53,6 +53,7 @@ app.include_router(forecasts.router, prefix="/api")
 app.include_router(rag.router, prefix="/api")
 app.include_router(report.router, prefix="/api")
 app.include_router(status.router, prefix="/api")
+app.include_router(export.router, prefix="/api")
 
 
 @app.get("/api/ping")
