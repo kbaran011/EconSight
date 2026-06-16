@@ -72,7 +72,7 @@ async def export_forecasts(
         SELECT period_date, target, horizon_months, model_type,
                point_forecast, p10, p50, p90,
                scenario_base, scenario_upside, scenario_downside
-        FROM marts.mart_forecasts
+        FROM marts.model_forecasts
         ORDER BY target, period_date ASC
     """
     async with get_cursor(conn) as cur:
