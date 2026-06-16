@@ -73,5 +73,5 @@ module = ["joblib", "shap", "sklearn.*", "xgboost", "statsmodels.*"]
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
-module = ["chromadb", "chromadb.*", "sentence_transformers", "weasyprint", "bs4", "pypdf"]
+module = ["chromadb", "chromadb.*", "sentence_transformers", "weasyprint", "bs4", "pypdf", "anthropic", "anthropic.*"]
 ignore_missing_imports = true
