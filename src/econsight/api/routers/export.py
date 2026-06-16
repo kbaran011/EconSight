@@ -12,7 +12,9 @@ from econsight.api.dependencies import get_cursor, get_db_readonly
 router = APIRouter()
 
 
-def _csv_response(headers: list[str], rows: list[tuple[object, ...]]) -> StreamingResponse:
+def _csv_response(
+    headers: list[str], rows: list[tuple[object, ...]], filename: str
+) -> StreamingResponse:
     buf = io.StringIO()
     writer = csv.writer(buf)
     writer.writerow(headers)
@@ -21,7 +23,7 @@ def _csv_response(headers: list[str], rows: list[tuple[object, ...]]) -> Streami
     return StreamingResponse(
         iter([buf.getvalue()]),
         media_type="text/csv",
-        headers={"Content-Disposition": "attachment"},
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
 
 
@@ -41,7 +43,7 @@ async def export_indicators(
         await cur.execute(sql)
         rows = await cur.fetchall()
         headers = [d[0] for d in (cur.description or [])]
-    return _csv_response(headers, rows)
+    return _csv_response(headers, rows, "indicators.csv")
 
 
 @router.get("/export/health-score.csv", response_class=StreamingResponse)
@@ -58,7 +60,7 @@ async def export_health_score(
         await cur.execute(sql)
         rows = await cur.fetchall()
         headers = [d[0] for d in (cur.description or [])]
-    return _csv_response(headers, rows)
+    return _csv_response(headers, rows, "health-score.csv")
 
 
 @router.get("/export/forecasts.csv", response_class=StreamingResponse)
@@ -77,4 +79,4 @@ async def export_forecasts(
         await cur.execute(sql)
         rows = await cur.fetchall()
         headers = [d[0] for d in (cur.description or [])]
-    return _csv_response(headers, rows)
+    return _csv_response(headers, rows, "forecasts.csv")
