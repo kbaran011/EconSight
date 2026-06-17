@@ -11,7 +11,7 @@ from econsight.api.main import app
 
 @pytest.mark.integration
 @pytest.mark.asyncio
-async def test_export_indicators_returns_csv() -> None:
+async def test_export_indicators_returns_csv(seeded_marts: None) -> None:
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         r = await client.get("/api/export/indicators.csv")
     assert r.status_code == 200
@@ -26,7 +26,7 @@ async def test_export_indicators_returns_csv() -> None:
 
 @pytest.mark.integration
 @pytest.mark.asyncio
-async def test_export_health_score_returns_csv() -> None:
+async def test_export_health_score_returns_csv(seeded_marts: None) -> None:
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         r = await client.get("/api/export/health-score.csv")
     assert r.status_code == 200
@@ -39,7 +39,7 @@ async def test_export_health_score_returns_csv() -> None:
 
 @pytest.mark.integration
 @pytest.mark.asyncio
-async def test_export_forecasts_returns_csv() -> None:
+async def test_export_forecasts_returns_csv(seeded_marts: None) -> None:
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         r = await client.get("/api/export/forecasts.csv")
     assert r.status_code == 200

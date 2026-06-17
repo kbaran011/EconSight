@@ -87,3 +87,14 @@ CREATE TABLE IF NOT EXISTS marts.economic_health_score (
     component_scores jsonb       NOT NULL,
     updated_at       timestamptz NOT NULL DEFAULT now()
 );
+
+-- Read-only role for API endpoints (safe to re-run)
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'econsight_reader') THEN
+        CREATE ROLE econsight_reader LOGIN PASSWORD 'kbdbaran';
+    END IF;
+END$$;
+GRANT USAGE ON SCHEMA marts TO econsight_reader;
+GRANT SELECT ON ALL TABLES IN SCHEMA marts TO econsight_reader;
+ALTER DEFAULT PRIVILEGES IN SCHEMA marts GRANT SELECT ON TABLES TO econsight_reader;
