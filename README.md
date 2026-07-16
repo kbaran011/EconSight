@@ -1,10 +1,13 @@
 # EconSight
 
 [![CI](https://github.com/kbaran011/EconSight/actions/workflows/ci.yml/badge.svg)](https://github.com/kbaran011/EconSight/actions/workflows/ci.yml)
+[![Live demo](https://img.shields.io/badge/Live-Railway-blueviolet)](https://frontend-production-f45a3.up.railway.app)
 
 **Full-stack Canadian economic intelligence platform** — live macro data, VAR/XGBoost forecasts, RAG Q&A, and a consulting-grade dashboard.
 
 **Live demo:** [frontend-production-f45a3.up.railway.app](https://frontend-production-f45a3.up.railway.app)
+
+![EconSight dashboard](docs/screenshot.jpg)
 
 ---
 
@@ -22,6 +25,25 @@ Ingests 9 macro indicators from Statistics Canada and the Bank of Canada into a 
 | AI | Llama 3.3-70b via Groq · RAG (SQL + semantic routing) |
 | Frontend | React · TypeScript · Tailwind CSS · Recharts · TanStack Query |
 | DevOps | Docker Compose · GitHub Actions CI · Railway |
+
+## Architecture
+
+```text
+src/econsight/
+├── clients/        # StatCan + Bank of Canada API clients (async httpx)
+├── db/             # schema.sql, loader, seed — Bronze → Silver → Gold warehouse
+├── models/         # VAR/VECM, XGBoost, Monte Carlo bands, SHAP, composite health score
+├── rag/            # ingestion, retriever, query engine (SQL + semantic routing)
+├── report/         # WeasyPrint executive brief + full PDF report
+├── api/            # FastAPI app + routers: indicators, forecasts, rag, report, export, status
+└── pipeline.py     # end-to-end orchestration
+
+frontend/           # React + TypeScript SPA (Dashboard, Indicators, Forecasts, Ask, Report)
+sql/                # database bootstrap
+powerbi/            # BI tool connection guide
+notebooks/          # analysis notebook (also the RAG corpus)
+tests/              # 69-test pytest suite, run in CI on every push
+```
 
 ## Quick Start
 
@@ -58,6 +80,10 @@ Live data is accessible to any BI tool via public CSV endpoints — no database 
 - `GET /api/export/forecasts.csv` — VAR/XGBoost forecasts with scenario bands
 
 See [`powerbi/README.md`](powerbi/README.md) for step-by-step connection instructions.
+
+## Why I built this
+
+I study CS and Economics, and I wanted the two to meet in something real: a system that treats macro data with the same engineering discipline as production software — a proper warehouse instead of one-off CSV pulls, models with honest uncertainty bands instead of single-point forecasts, and an interface a non-technical reader can actually use. Building it end to end (ingestion → warehouse → models → API → frontend → PDF) was the point.
 
 ## What I'd Add at Scale
 
