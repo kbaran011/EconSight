@@ -120,3 +120,31 @@ def test_save_load_roundtrip(tmp_path: Path) -> None:
         loaded.load(path)
 
     assert loaded._fitted_model is not None
+
+
+def test_predict_levels_var_branch_cumsums_diffs(monkeypatch):
+    from econsight.models.var_model import VARModel
+
+    m = VARModel()
+    m._model_type = "var"
+    per_step = {
+        1: {"cpi": 0.5, "unemployment_rate": 0.0, "overnight_rate": 0.0},
+        2: {"cpi": 0.5, "unemployment_rate": 0.0, "overnight_rate": 0.0},
+        3: {"cpi": 0.5, "unemployment_rate": 0.0, "overnight_rate": 0.0},
+    }
+    monkeypatch.setattr(m, "predict", lambda horizons: per_step)
+    last = {"cpi": 100.0, "unemployment_rate": 6.0, "overnight_rate": 4.0}
+    out = m.predict_levels(last, [1, 3])
+    assert out[1]["cpi"] == pytest.approx(100.5)   # 100 + 0.5
+    assert out[3]["cpi"] == pytest.approx(101.5)   # 100 + 0.5*3
+
+
+def test_predict_levels_vecm_branch_passthrough(monkeypatch):
+    from econsight.models.var_model import VARModel
+
+    m = VARModel()
+    m._model_type = "vecm"
+    per_step = {1: {"cpi": 137.0, "unemployment_rate": 5.5, "overnight_rate": 4.2}}
+    monkeypatch.setattr(m, "predict", lambda horizons: per_step)
+    out = m.predict_levels({"cpi": 100.0, "unemployment_rate": 6.0, "overnight_rate": 4.0}, [1])
+    assert out[1]["cpi"] == pytest.approx(137.0)   # already a level

@@ -50,6 +50,30 @@ class VARModel:
             result[h] = {col: float(row[i]) for i, col in enumerate(_TARGET_COLS)}
         return result
 
+    def predict_levels(
+        self, last_levels: dict[str, float], horizons: list[int]
+    ) -> dict[int, dict[str, float]]:
+        """Level forecasts comparable across branches.
+
+        VECM already forecasts levels (passthrough). The non-cointegrated branch fits on
+        first differences, so its per-step forecasts are changes; reconstruct the level as
+        last_level + cumulative sum of forecast diffs up to each horizon.
+        """
+        max_h = max(horizons)
+        per_step = self.predict(horizons=list(range(1, max_h + 1)))
+        result: dict[int, dict[str, float]] = {}
+        if self._model_type == "vecm":
+            for h in horizons:
+                result[h] = {c: float(per_step[h][c]) for c in _TARGET_COLS}
+        else:
+            for h in horizons:
+                result[h] = {
+                    c: float(last_levels[c])
+                    + sum(float(per_step[k][c]) for k in range(1, h + 1))
+                    for c in _TARGET_COLS
+                }
+        return result
+
     def save(self, path: Path) -> None:
         joblib.dump({"model": self._fitted_model, "type": self._model_type}, path)
 
