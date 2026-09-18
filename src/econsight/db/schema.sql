@@ -88,6 +88,40 @@ CREATE TABLE IF NOT EXISTS marts.economic_health_score (
     updated_at       timestamptz NOT NULL DEFAULT now()
 );
 
+-- marts.model_backtests
+CREATE TABLE IF NOT EXISTS marts.model_backtests (
+    id                bigserial   PRIMARY KEY,
+    target            text        NOT NULL,
+    horizon_months    int         NOT NULL,
+    model_type        text        NOT NULL,
+    baseline          text        NOT NULL,
+    n_folds           int         NOT NULL,
+    mae               numeric,
+    rmse              numeric,
+    mase              numeric,
+    skill_score_vs_rw numeric,
+    dm_stat           numeric,
+    dm_pvalue         numeric,
+    backtest_start    date,
+    backtest_end      date,
+    created_at        timestamptz NOT NULL DEFAULT now(),
+    UNIQUE (target, horizon_months, model_type)
+);
+
+-- marts.backtest_predictions
+CREATE TABLE IF NOT EXISTS marts.backtest_predictions (
+    id             bigserial   PRIMARY KEY,
+    target         text        NOT NULL,
+    horizon_months int         NOT NULL,
+    model_type     text        NOT NULL,
+    origin_date    date        NOT NULL,
+    target_date    date        NOT NULL,
+    y_true         numeric     NOT NULL,
+    y_pred         numeric     NOT NULL,
+    created_at     timestamptz NOT NULL DEFAULT now(),
+    UNIQUE (target, horizon_months, model_type, target_date)
+);
+
 -- Read-only role for API endpoints (safe to re-run)
 DO $$
 BEGIN
