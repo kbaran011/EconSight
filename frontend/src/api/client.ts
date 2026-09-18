@@ -46,10 +46,28 @@ export interface ForecastPoint {
   scenario_downside: number | null
 }
 
+export interface SentenceAttribution {
+  text: string
+  supported: boolean
+  similarity: number
+  best_source_title: string
+  cited_chunk_ids: number[]
+}
+
+export interface SourceSnippet {
+  chunk_id: number
+  title: string
+  snippet: string
+}
+
 export interface RAGResponse {
   answer: string
   sources: string[]
   query_type: 'sql' | 'narrative'
+  groundedness?: number | null
+  grounding?: SentenceAttribution[] | null
+  source_snippets?: SourceSnippet[] | null
+  executed_sql?: string | null
 }
 
 export const fetchIndicators = () =>
@@ -79,3 +97,57 @@ export interface StatusResponse {
 
 export const fetchStatus = () =>
   api.get<StatusResponse>('/api/status').then(r => r.data)
+
+export interface BacktestMetric {
+  target: string
+  horizon_months: number
+  model_type: string
+  baseline: string
+  n_folds: number
+  mae: number | null
+  rmse: number | null
+  mase: number | null
+  skill_score_vs_rw: number | null
+  dm_stat: number | null
+  dm_pvalue: number | null
+  backtest_start: string | null
+  backtest_end: string | null
+  low_confidence: boolean
+}
+
+export interface BacktestPredictionPoint {
+  target_date: string
+  model_type: string
+  y_true: number
+  y_pred: number
+}
+
+export interface BacktestPredictionSeries {
+  target: string
+  horizon_months: number
+  points: BacktestPredictionPoint[]
+}
+
+export interface ValidationSummary {
+  total_configs: number
+  configs_beating_rw: number
+  best_skill_score: number | null
+  best_config: string | null
+  total_folds: number
+  backtest_start: string | null
+  backtest_end: string | null
+  low_confidence: boolean
+}
+
+export const fetchValidationMetrics = () =>
+  api.get<BacktestMetric[]>('/api/validation/metrics').then(r => r.data)
+
+export const fetchValidationSummary = () =>
+  api.get<ValidationSummary>('/api/validation/summary').then(r => r.data)
+
+export const fetchValidationPredictions = (target: string, horizon: number) =>
+  api
+    .get<BacktestPredictionSeries>('/api/validation/predictions', {
+      params: { target, horizon },
+    })
+    .then(r => r.data)
