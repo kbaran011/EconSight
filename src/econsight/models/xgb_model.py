@@ -25,6 +25,18 @@ class ModelMetrics:
     test_mae: float
 
 
+def make_estimator() -> XGBRegressor:
+    """Canonical XGBoost hyperparameters, shared by training and backtesting."""
+    return XGBRegressor(
+        n_estimators=200,
+        max_depth=4,
+        learning_rate=0.05,
+        subsample=0.8,
+        random_state=42,
+        n_jobs=-1,
+    )
+
+
 class XGBForecastModel:
     def __init__(self, target: str, horizon: int) -> None:
         self.target = target
@@ -36,14 +48,7 @@ class XGBForecastModel:
         X_train, X_test = X.iloc[:split], X.iloc[split:]
         y_train, y_test = y.iloc[:split], y.iloc[split:]
 
-        self._model = XGBRegressor(
-            n_estimators=200,
-            max_depth=4,
-            learning_rate=0.05,
-            subsample=0.8,
-            random_state=42,
-            n_jobs=-1,
-        )
+        self._model = make_estimator()
         self._model.fit(X_train, y_train, eval_set=[(X_test, y_test)], verbose=False)
 
         train_pred = self._model.predict(X_train)
