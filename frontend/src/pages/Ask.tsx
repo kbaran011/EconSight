@@ -37,6 +37,104 @@ function CopyButton({ text }: { text: string }) {
   )
 }
 
+/* Evidence panel: groundedness meter, per-claim attribution, source snippets, executed SQL.
+   Every block is guarded, so responses lacking these fields render exactly as before. */
+function GroundingPanel({ response }: { response: RAGResponse }) {
+  const { groundedness, grounding, source_snippets, executed_sql } = response
+  const hasMeter = groundedness != null && grounding != null && grounding.length > 0
+  const supported = grounding?.filter(s => s.supported).length ?? 0
+  const total = grounding?.length ?? 0
+
+  // Colour the meter by how well-grounded the answer is.
+  const meterTone = groundedness == null ? null
+    : groundedness >= 0.8 ? { bar: 'var(--positive)', text: 'text-[var(--positive)]' }
+    : groundedness >= 0.5 ? { bar: '#d97706', text: 'text-amber-600' }
+    : { bar: 'var(--negative)', text: 'text-[var(--negative)]' }
+
+  if (!hasMeter && !(source_snippets?.length) && !executed_sql) return null
+
+  return (
+    <div className="pt-3 border-t border-[var(--border)] mt-4 space-y-4">
+      {/* Groundedness meter */}
+      {hasMeter && meterTone && (
+        <div>
+          <div className="flex items-center justify-between mb-1.5">
+            <p className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">Groundedness</p>
+            <p className={`text-[11px] font-mono font-semibold ${meterTone.text}`}>
+              {Math.round((groundedness as number) * 100)}% grounded — {supported}/{total} claims traceable
+            </p>
+          </div>
+          <div className="h-1.5 w-full rounded-full bg-[var(--surface-2)] overflow-hidden">
+            <div
+              className="h-full rounded-full transition-all"
+              style={{ width: `${Math.round((groundedness as number) * 100)}%`, background: meterTone.bar }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Per-claim attribution */}
+      {grounding && grounding.length > 0 && (
+        <div>
+          <p className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-2">Claim Attribution</p>
+          <ul className="space-y-1.5">
+            {grounding.map((s, i) => (
+              <li
+                key={i}
+                className={`text-[13px] leading-relaxed pl-3 border-l-2 ${
+                  s.supported
+                    ? 'border-l-[var(--primary)] text-[var(--text-secondary)]'
+                    : 'border-l-amber-500 text-[var(--text-primary)]'
+                }`}
+              >
+                <span>{s.text}</span>
+                {!s.supported && (
+                  <span className="ml-2 inline-flex items-center text-[9px] font-bold uppercase tracking-wider text-amber-600 bg-amber-50 border border-amber-200 rounded px-1.5 py-0.5 align-middle">
+                    no strong source found
+                  </span>
+                )}
+                <span className="block text-[10px] font-mono text-[var(--text-xmuted)] mt-0.5">
+                  {s.best_source_title} · sim {s.similarity.toFixed(2)}
+                  {s.cited_chunk_ids.length > 0 && ` · cites [${s.cited_chunk_ids.join('] [')}]`}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Source snippets — citation numbers in the answer map to these */}
+      {source_snippets && source_snippets.length > 0 && (
+        <div>
+          <p className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-2">Sourced Evidence</p>
+          <ul className="space-y-1.5">
+            {source_snippets.map(src => (
+              <li key={src.chunk_id} className="text-[12px] text-[var(--text-secondary)] leading-relaxed">
+                <span className="font-mono font-semibold text-[var(--primary)]">[{src.chunk_id}]</span>{' '}
+                <span className="font-semibold text-[var(--text-primary)]">{src.title}</span>
+                {src.snippet && <span className="text-[var(--text-muted)]"> — {src.snippet}</span>}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Executed SQL — collapsible */}
+      {executed_sql && (
+        <details className="group">
+          <summary className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-wider cursor-pointer hover:text-[var(--primary)] transition-colors list-none flex items-center gap-1.5">
+            <span className="inline-block transition-transform group-open:rotate-90">▸</span>
+            How this was computed
+          </summary>
+          <pre className="mt-2 bg-[var(--surface-2)] border border-[var(--border)] rounded-lg p-3 text-[11px] font-mono text-[var(--text-secondary)] overflow-x-auto whitespace-pre-wrap">
+            {executed_sql}
+          </pre>
+        </details>
+      )}
+    </div>
+  )
+}
+
 function AnswerCard({ entry, index, total }: { entry: HistoryEntry; index: number; total: number }) {
   const { question, response } = entry
   const isLatest = index === total - 1
@@ -55,6 +153,9 @@ function AnswerCard({ entry, index, total }: { entry: HistoryEntry; index: numbe
 
       {/* Answer */}
       <p className="font-serif text-[15px] text-[var(--text-secondary)] leading-relaxed mt-3 whitespace-pre-wrap">{response.answer}</p>
+
+      {/* Grounding evidence (guarded — absent for older/error responses) */}
+      <GroundingPanel response={response} />
 
       {/* Sources */}
       {response.sources.length > 0 && (
