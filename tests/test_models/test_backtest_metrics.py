@@ -34,3 +34,37 @@ def test_skill_score_sign():
     assert skill_score(rmse_model=0.5, rmse_baseline=1.0) == pytest.approx(0.5)
     assert skill_score(rmse_model=2.0, rmse_baseline=1.0) == pytest.approx(-1.0)
     assert np.isnan(skill_score(rmse_model=1.0, rmse_baseline=0.0))
+
+
+from econsight.models.backtest_metrics import diebold_mariano
+
+
+def test_dm_detects_clear_superiority():
+    rng = np.random.default_rng(0)
+    n = 60
+    base_err = rng.normal(0, 1.0, n)
+    model_err = rng.normal(0, 0.3, n)      # clearly smaller errors
+    stat, p = diebold_mariano(model_err, base_err, horizon=1)
+    assert stat < 0          # negative => model loss < baseline loss
+    assert p is not None and p < 0.05
+
+
+def test_dm_no_difference_is_insignificant():
+    rng = np.random.default_rng(1)
+    e = rng.normal(0, 1.0, 60)
+    stat, p = diebold_mariano(e.copy(), e.copy(), horizon=1)
+    assert p is None or p > 0.05     # identical losses -> n/a or non-significant
+
+
+def test_dm_small_sample_returns_none_pvalue():
+    stat, p = diebold_mariano([0.1, 0.2, 0.3], [0.2, 0.3, 0.4], horizon=1)
+    assert p is None
+
+
+def test_dm_horizon_uses_autocovariance_terms():
+    # Should run without error for h>1 and return a finite stat
+    rng = np.random.default_rng(2)
+    base_err = rng.normal(0, 1.0, 50)
+    model_err = rng.normal(0, 0.5, 50)
+    stat, p = diebold_mariano(model_err, base_err, horizon=3)
+    assert np.isfinite(stat)
