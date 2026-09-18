@@ -15,6 +15,7 @@ async def test_get_status() -> None:
         (36,),
         (date(2025, 1, 1),),
         ("success", 120, datetime(2025, 1, 2, 12, 0, 0)),
+        (5,),
     ])
     mock_conn = AsyncMock()
     mock_conn.cursor.return_value.__aenter__ = AsyncMock(return_value=mock_cur)

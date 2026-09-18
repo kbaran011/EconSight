@@ -43,6 +43,10 @@ async def get_status(
         )
         pipeline_row = await cur.fetchone()
 
+        await cur.execute("SELECT COUNT(*) FROM marts.model_backtests")
+        backtest_row = await cur.fetchone()
+        backtest_count = int(backtest_row[0]) if backtest_row else 0
+
     last_run_at: datetime | None = None
     last_run_rows: int | None = None
     if pipeline_row:
@@ -60,4 +64,5 @@ async def get_status(
         last_pipeline_run_at=last_run_at,
         last_pipeline_rows=last_run_rows,
         groq_configured=bool(settings.groq_api_key),
+        backtest_row_count=backtest_count,
     )

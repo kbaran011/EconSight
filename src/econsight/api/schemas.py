@@ -107,3 +107,4 @@ class StatusResponse(BaseModel):
     last_pipeline_run_at: datetime | None = None
     last_pipeline_rows: int | None = None
     groq_configured: bool
+    backtest_row_count: int = 0
