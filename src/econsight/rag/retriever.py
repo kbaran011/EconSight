@@ -22,6 +22,10 @@ def _get_model() -> SentenceTransformer:
     return _model
 
 
+def get_encoder() -> SentenceTransformer:
+    return _get_model()
+
+
 async def retrieve(question: str, top_k: int = 5) -> list[dict[str, str]]:
     model = await asyncio.to_thread(_get_model)
     embedding = await asyncio.to_thread(model.encode, [question])

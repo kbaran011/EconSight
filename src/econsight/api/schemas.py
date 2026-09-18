@@ -52,10 +52,28 @@ class RAGRequest(BaseModel):
     question: str
 
 
+class SourceSnippet(BaseModel):
+    chunk_id: int
+    title: str
+    snippet: str
+
+
+class SentenceAttribution(BaseModel):
+    text: str
+    supported: bool
+    similarity: float
+    best_source_title: str
+    cited_chunk_ids: list[int] = []
+
+
 class RAGResponse(BaseModel):
     answer: str
     sources: list[str]
     query_type: Literal["sql", "narrative"]
+    groundedness: float | None = None
+    grounding: list[SentenceAttribution] | None = None
+    source_snippets: list[SourceSnippet] | None = None
+    executed_sql: str | None = None
 
 
 class BacktestMetric(BaseModel):

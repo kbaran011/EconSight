@@ -4,7 +4,7 @@ import re
 
 from groq import AsyncGroq
 
-from econsight.api.schemas import RAGResponse
+from econsight.api.schemas import RAGResponse, SentenceAttribution, SourceSnippet
 from econsight.config import get_logger, settings
 from econsight.db.connection import db_connection_readonly
 from econsight.rag.retriever import retrieve
@@ -99,7 +99,12 @@ async def _sql_answer(question: str) -> RAGResponse:
     except Exception as exc:
         answer = f"Query failed: {exc}"
 
-    return RAGResponse(answer=answer, sources=["database"], query_type="sql")
+    return RAGResponse(
+        answer=answer,
+        sources=["database"],
+        query_type="sql",
+        executed_sql=sql,
+    )
 
 
 async def _narrative_answer(question: str) -> RAGResponse:
@@ -113,7 +118,9 @@ async def _narrative_answer(question: str) -> RAGResponse:
             sources=[],
             query_type="narrative",
         )
-    context = "\n\n".join(f"[{c['title']}]\n{c['text']}" for c in chunks)
+    context = "\n\n".join(
+        f"[{i + 1}] ({c['title']})\n{c['text']}" for i, c in enumerate(chunks)
+    )
     response = await _client.chat.completions.create(
         model=_MODEL,
         max_tokens=512,
@@ -123,16 +130,26 @@ async def _narrative_answer(question: str) -> RAGResponse:
                 "content": (
                     "Answer the question using only the provided context."
                     " Be concise and factual."
+                    " Cite the chunk number in square brackets like [1] after each"
+                    " claim it supports."
                 ),
             },
             {"role": "user", "content": f"Context:\n{context}\n\nQuestion: {question}"},
         ],
     )
-    sources = list({c["title"] for c in chunks if c["title"]})
+    answer_text = _text(response)
+
+    from econsight.rag.grounding import build_report
+    from econsight.rag.retriever import get_encoder
+
+    report = build_report(answer_text, chunks, encoder=get_encoder())
     return RAGResponse(
-        answer=_text(response),
-        sources=sources,
+        answer=answer_text,
+        sources=list({c["title"] for c in chunks if c["title"]}),
         query_type="narrative",
+        groundedness=report["groundedness"],
+        grounding=[SentenceAttribution(**s) for s in report["sentences"]],
+        source_snippets=[SourceSnippet(**s) for s in report["sources"]],
     )
 
 
