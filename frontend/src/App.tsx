@@ -5,6 +5,7 @@ import Ask from './pages/Ask'
 import About from './pages/About'
 import Dashboard from './pages/Dashboard'
 import Forecasts from './pages/Forecasts'
+import Validation from './pages/Validation'
 import Indicators from './pages/Indicators'
 import Report from './pages/Report'
 import { fetchHealthScore, fetchStatus } from './api/client'
@@ -22,6 +23,7 @@ const NAV_LINKS = [
   ['/dashboard',  'Dashboard'],
   ['/indicators', 'Indicators'],
   ['/forecasts',  'Forecasts'],
+  ['/validation', 'Validation'],
   ['/ask',        'Ask'],
   ['/report',     'Report'],
   ['/about',      'About'],
@@ -234,6 +236,7 @@ export default function App() {
               <Route path="/dashboard"  element={<Dashboard />} />
               <Route path="/indicators" element={<Indicators />} />
               <Route path="/forecasts"  element={<Forecasts />} />
+              <Route path="/validation" element={<Validation />} />
               <Route path="/ask"        element={<Ask />} />
               <Route path="/report"     element={<Report />} />
               <Route path="/about"      element={<About />} />
