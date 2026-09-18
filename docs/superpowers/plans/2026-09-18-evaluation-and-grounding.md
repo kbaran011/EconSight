@@ -30,6 +30,7 @@
 
 **Modify (backend):**
 - `src/econsight/models/xgb_model.py` — extract `make_estimator()` factory (DRY, reused by backtest).
+- `src/econsight/models/var_model.py` — add `predict_levels()` so the VAR (differenced) branch returns level forecasts comparable to `y_true` (VECM branch already returns levels). Does not change `fit`/`predict`.
 - `src/econsight/db/schema.sql` — two new tables + grants.
 - `src/econsight/db/seed.py` — run backtest in the seed path behind an empty-table guard.
 - `src/econsight/api/schemas.py` — `BacktestMetric`, `BacktestPredictionSeries`, `ValidationSummary`, `SourceSnippet`, `SentenceAttribution`, extended `RAGResponse`, `StatusResponse.backtest_row_count`.
@@ -479,7 +480,11 @@ class VARBacktest:
 
         var = VARModel()
         var.fit(train_levels)
-        return float(var.predict(horizons=[horizon])[horizon][target])
+        last = {c: float(train_levels[c].iloc[-1]) for c in _TARGET_COLS}
+        # predict_levels reconstructs a LEVEL forecast for both branches (see Task 4b),
+        # so it is comparable to y_true; a raw var.predict() on the differenced branch
+        # would return a month-over-month change and produce a spurious units mismatch.
+        return float(var.predict_levels(last, [horizon])[horizon][target])
 
 
 def walk_forward(
@@ -589,7 +594,17 @@ def evaluate_target_horizon(
 ) -> tuple[list[dict], list[dict]]:
     """Run the backtest and return (metric rows, prediction rows) as plain dicts."""
     folds_by_model = walk_forward(levels, X, target, horizon, models, min_train)
-    scale_series = levels[target].tolist()
+    # MASE scale = naive one-step MAE on the TRAINING portion only (levels up to the first
+    # backtest origin), so the test window never leaks into the denominator (spec A.2).
+    first_origin = min(
+        (f.origin_date for folds in folds_by_model.values() for f in folds),
+        default=None,
+    )
+    scale_series = (
+        levels[target].loc[:first_origin].tolist()
+        if first_origin is not None
+        else levels[target].tolist()
+    )
 
     # Random-walk baseline, keyed by target_date for alignment
     rw_folds = folds_by_model.get("naive_rw", [])
@@ -658,6 +673,95 @@ Run: `pytest tests/test_models/test_backtest.py -v`
 ```bash
 git add src/econsight/models/backtest.py tests/test_models/test_backtest.py
 git commit -m "feat: aggregate backtest folds into metrics + prediction rows"
+```
+
+### Task 4b: VAR level reconstruction (`predict_levels`)
+
+**Files:**
+- Modify: `src/econsight/models/var_model.py`
+- Test: `tests/test_models/test_var_model.py`
+
+**Why:** the non-cointegrated branch fits `VAR(data.diff())` and `predict()` returns forecasts
+in *differenced* space (month-over-month changes), while the backtest compares against level
+`y_true`. `predict_levels()` reconstructs levels (VECM branch already returns levels), so VAR
+is evaluated fairly. `fit`/`predict` are untouched — existing tests stay green.
+
+- [ ] **Step 1: Add failing tests** (deterministic — monkeypatch `predict` to isolate the
+  reconstruction logic; no statsmodels fit needed)
+
+```python
+# append to tests/test_models/test_var_model.py
+def test_predict_levels_var_branch_cumsums_diffs(monkeypatch):
+    from econsight.models.var_model import VARModel
+
+    m = VARModel()
+    m._model_type = "var"
+    per_step = {
+        1: {"cpi": 0.5, "unemployment_rate": 0.0, "overnight_rate": 0.0},
+        2: {"cpi": 0.5, "unemployment_rate": 0.0, "overnight_rate": 0.0},
+        3: {"cpi": 0.5, "unemployment_rate": 0.0, "overnight_rate": 0.0},
+    }
+    monkeypatch.setattr(m, "predict", lambda horizons: per_step)
+    last = {"cpi": 100.0, "unemployment_rate": 6.0, "overnight_rate": 4.0}
+    out = m.predict_levels(last, [1, 3])
+    assert out[1]["cpi"] == pytest.approx(100.5)   # 100 + 0.5
+    assert out[3]["cpi"] == pytest.approx(101.5)   # 100 + 0.5*3
+
+
+def test_predict_levels_vecm_branch_passthrough(monkeypatch):
+    from econsight.models.var_model import VARModel
+
+    m = VARModel()
+    m._model_type = "vecm"
+    per_step = {1: {"cpi": 137.0, "unemployment_rate": 5.5, "overnight_rate": 4.2}}
+    monkeypatch.setattr(m, "predict", lambda horizons: per_step)
+    out = m.predict_levels({"cpi": 100.0, "unemployment_rate": 6.0, "overnight_rate": 4.0}, [1])
+    assert out[1]["cpi"] == pytest.approx(137.0)   # already a level
+```
+
+Ensure `import pytest` is present at the top of `tests/test_models/test_var_model.py`.
+
+- [ ] **Step 2: Run — expect FAIL**
+
+Run: `pytest tests/test_models/test_var_model.py -k predict_levels -v`
+
+- [ ] **Step 3: Implement — add method to `VARModel` (uses existing `_TARGET_COLS`)**
+
+```python
+    def predict_levels(
+        self, last_levels: dict[str, float], horizons: list[int]
+    ) -> dict[int, dict[str, float]]:
+        """Level forecasts comparable across branches.
+
+        VECM already forecasts levels (passthrough). The non-cointegrated branch fits on
+        first differences, so its per-step forecasts are changes; reconstruct the level as
+        last_level + cumulative sum of forecast diffs up to each horizon.
+        """
+        max_h = max(horizons)
+        per_step = self.predict(horizons=list(range(1, max_h + 1)))
+        result: dict[int, dict[str, float]] = {}
+        if self._model_type == "vecm":
+            for h in horizons:
+                result[h] = {c: float(per_step[h][c]) for c in _TARGET_COLS}
+        else:
+            for h in horizons:
+                result[h] = {
+                    c: float(last_levels[c])
+                    + sum(float(per_step[k][c]) for k in range(1, h + 1))
+                    for c in _TARGET_COLS
+                }
+        return result
+```
+
+- [ ] **Step 4: Run — expect PASS (new + existing VAR tests)**
+
+Run: `pytest tests/test_models/test_var_model.py -v`
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add src/econsight/models/var_model.py tests/test_models/test_var_model.py
+git commit -m "feat: VARModel.predict_levels for fair level-space backtesting"
 ```
 
 ---
@@ -1477,6 +1581,7 @@ new interfaces (`SentenceAttribution`, `SourceSnippet`) mirroring the Pydantic m
 
 - [ ] **Step 2: Add validation types + fetchers**
 
+
 ```typescript
 export interface BacktestMetric {
   target: string
@@ -1529,12 +1634,12 @@ export const fetchValidationPredictions = (target: string, horizon: number) =>
     .then(r => r.data)
 ```
 
-- [ ] **Step 2: Run typecheck**
+- [ ] **Step 3: Run typecheck**
 
 Run: `cd frontend && npm run build`
 Expected: build succeeds.
 
-- [ ] **Step 3: Commit**
+- [ ] **Step 4: Commit**
 
 ```bash
 git add frontend/src/api/client.ts
