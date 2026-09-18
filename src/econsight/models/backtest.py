@@ -237,3 +237,85 @@ def evaluate_target_horizon(
                 }
             )
     return metric_rows, pred_rows
+
+
+import asyncio
+from typing import Any
+
+import psycopg
+
+from econsight.config import configure_logging, get_logger
+from econsight.db.connection import db_connection
+from econsight.models.features import build_feature_matrix, load_mart
+from econsight.models.xgb_model import HORIZONS, TARGETS
+
+_MIN_TRAIN_DEFAULT = 48
+_MIN_FOLDS = 12  # below this, results are flagged low_confidence downstream
+
+_METRIC_UPSERT = """
+    INSERT INTO marts.model_backtests
+        (target, horizon_months, model_type, baseline, n_folds, mae, rmse, mase,
+         skill_score_vs_rw, dm_stat, dm_pvalue, backtest_start, backtest_end)
+    VALUES (%(target)s, %(horizon_months)s, %(model_type)s, %(baseline)s, %(n_folds)s,
+            %(mae)s, %(rmse)s, %(mase)s, %(skill_score_vs_rw)s, %(dm_stat)s,
+            %(dm_pvalue)s, %(backtest_start)s, %(backtest_end)s)
+    ON CONFLICT (target, horizon_months, model_type) DO UPDATE SET
+        baseline = EXCLUDED.baseline, n_folds = EXCLUDED.n_folds, mae = EXCLUDED.mae,
+        rmse = EXCLUDED.rmse, mase = EXCLUDED.mase,
+        skill_score_vs_rw = EXCLUDED.skill_score_vs_rw, dm_stat = EXCLUDED.dm_stat,
+        dm_pvalue = EXCLUDED.dm_pvalue, backtest_start = EXCLUDED.backtest_start,
+        backtest_end = EXCLUDED.backtest_end, created_at = now()
+"""
+
+_PRED_UPSERT = """
+    INSERT INTO marts.backtest_predictions
+        (target, horizon_months, model_type, origin_date, target_date, y_true, y_pred)
+    VALUES (%(target)s, %(horizon_months)s, %(model_type)s, %(origin_date)s,
+            %(target_date)s, %(y_true)s, %(y_pred)s)
+    ON CONFLICT (target, horizon_months, model_type, target_date) DO UPDATE SET
+        origin_date = EXCLUDED.origin_date, y_true = EXCLUDED.y_true,
+        y_pred = EXCLUDED.y_pred, created_at = now()
+"""
+
+
+def _default_min_train(n_pairs: int) -> int:
+    """Keep >= ~20 folds when data is short."""
+    if n_pairs - _MIN_TRAIN_DEFAULT >= 20:
+        return _MIN_TRAIN_DEFAULT
+    return max(24, n_pairs // 2)
+
+
+async def run_backtest() -> None:
+    configure_logging()
+    log = get_logger(__name__)
+    log.info("backtest.start")
+
+    async with db_connection() as conn:
+        levels = await load_mart(conn)
+        X = build_feature_matrix(levels)
+        models: list[BacktestModel] = [
+            NaiveRW(), SeasonalNaive(), VARBacktest(), XGBBacktest()
+        ]
+        all_metrics: list[dict[str, Any]] = []
+        all_preds: list[dict[str, Any]] = []
+        for target in TARGETS:
+            for horizon in HORIZONS:
+                pairs_n = len(X) - horizon
+                min_train = _default_min_train(pairs_n)
+                metrics, preds = evaluate_target_horizon(
+                    levels, X, target, horizon, models, min_train
+                )
+                all_metrics.extend(metrics)
+                all_preds.extend(preds)
+                log.info("backtest.cell", target=target, horizon=horizon,
+                         folds=metrics[0]["n_folds"] if metrics else 0)
+
+        async with conn.cursor() as cur:
+            await cur.executemany(_METRIC_UPSERT, all_metrics)
+            await cur.executemany(_PRED_UPSERT, all_preds)
+        await conn.commit()
+        log.info("backtest.persisted", metrics=len(all_metrics), preds=len(all_preds))
+
+
+if __name__ == "__main__":
+    asyncio.run(run_backtest())
