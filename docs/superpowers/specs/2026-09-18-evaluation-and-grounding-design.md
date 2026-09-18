@@ -65,10 +65,19 @@ For each `target ∈ {cpi, unemployment_rate, overnight_rate}` and `horizon ∈ 
 - Choose an initial training window `min_train` (default 48 months, clamped so at least
   ~20 folds remain; if data is too short, reduce and record the actual fold count).
 - For each origin `t` from `min_train` to `T - h`:
-  - Train each model on data strictly up to `t` (no row at or after `t` visible), forecast
-    the value at period `t + h`, and record `(origin_date, target_date, y_true, y_pred)`.
-  - **No look-ahead** is the invariant under test: features at origin `t` already use only
-    `shift(1)+` transforms; the backtest additionally slices `X.loc[:t]` / `y.loc[:t]`.
+  - Train each model only on forecast pairs whose **target date is ≤ `t`** — i.e. origins up
+    to `t - h`. This is the critical detail and the invariant under test: because the XGB/VAR
+    target is `y = series.shift(-h)` (a value at `t + h` indexed at origin `t`), naively
+    slicing `y.loc[:t]` would admit training pairs whose realized targets run up to `t + h`,
+    i.e. future information relative to the origin being forecast. The leakage-free slice is
+    `X.loc[:t-h]` / `y.loc[:t-h]` (equivalently: keep only pairs with `target_date ≤ t`).
+  - Then forecast the value at period `t + h` and record
+    `(origin_date, target_date, y_true, y_pred)`.
+  - **No look-ahead**: features at origin `t` use only information available at `t`
+    (contemporaneous raw levels and lag/rolling/diff transforms — *not* exclusively
+    `shift(1)+` transforms), and the `t - h` target cutoff above guarantees no training
+    pair's `target_date` exceeds `t`. The naive baselines are closed-form and use only
+    `y_t` / `y_{t+h-12}`, both known at `t`.
 
 **Registered forecasters (model-agnostic via a small protocol):**
 
@@ -99,9 +108,12 @@ Computed per `(target, horizon, model)` over the collected folds:
   Reported per model (RW's own skill score is 0 by construction).
 - **Diebold–Mariano test** vs random walk: on the per-fold squared-error loss
   differentials, with the Harvey–Leybourne–Newbold small-sample correction and a
-  Student-t reference distribution. Returns `dm_stat`, `dm_pvalue`. Implemented directly
-  (small, well-specified function) since statsmodels lacks a clean DM. Guards for
-  degenerate cases (identical losses, `n < 8`) → `dm_pvalue = None`.
+  Student-t reference distribution. For multi-step horizons (`h > 1`) the forecasts overlap,
+  so the loss differentials are serially correlated; the statistic therefore uses a long-run
+  (HAC) variance that includes autocovariances up to lag `h − 1`, not the naive i.i.d.
+  variance (for `h = 1` this reduces to the plain variance). Returns `dm_stat`, `dm_pvalue`.
+  Implemented directly (small, well-specified function) since statsmodels lacks a clean DM.
+  Guards for degenerate cases (identical losses, `n < 8`) → `dm_pvalue = None`.
 
 ### A.3 Persistence — new tables (added to `db/schema.sql`, idempotent)
 
@@ -168,8 +180,11 @@ Router registered in `api/main.py` alongside the others.
 
 - `tests/test_models/test_backtest.py`: MASE on a known series (hand-computed),
   DM statistic on synthetic loss series (sign + rough magnitude), skill-score arithmetic,
-  and a **no-look-ahead integrity** test (assert each fold's training slice max index <
-  origin, and that a deterministic naive forecast equals `y_t`).
+  and a **no-look-ahead integrity** test that asserts, for every training pair used at
+  origin `t`, that its `target_date ≤ t` (equivalently `origin + h ≤ t`) — checking the
+  *target* dates, not just `X`'s index, since a `shift(-h)` leak lives in `y`'s values and
+  would otherwise slip past an index-only check — and that a deterministic naive forecast
+  equals `y_t`.
 - `tests/test_api/test_validation.py`: endpoints return fixture-seeded rows with correct
   shape and filtering.
 
@@ -188,9 +203,12 @@ evidence **independently of the LLM that wrote the answer**:
   chunk embeddings. Attach `best_source_title`, `similarity`, and `supported = similarity
   ≥ THRESHOLD` (default 0.45, a config constant with a documented rationale).
 - **Citations**: the generation prompt is updated to number the context chunks and ask the
-  LLM to append `[n]` markers. `grounding.py` parses `[n]` → `cited_chunk_ids`. Citations
-  and the independent similarity check are both reported; the similarity check is the
-  trustworthy signal (LLM citations can be wrong).
+  LLM to append `[n]` markers. `grounding.py` parses `[n]` → `cited_chunk_ids`. A `chunk_id`
+  is the **1-based positional index into the numbered context** (chunk 1..k as presented to
+  the LLM), matching the `[n]` markers; the retriever does not need to surface stable ids,
+  and `SourceSnippet.chunk_id` is that same position. Citations and the independent
+  similarity check are both reported; the similarity check is the trustworthy signal (LLM
+  citations can be wrong).
 - **Groundedness score**: fraction of sentences with `supported = True` (0–100%). Also
   expose mean similarity for nuance.
 
@@ -256,8 +274,10 @@ class RAGResponse (extended, all new fields Optional/defaulted):
 
 ## Error handling & edge cases
 
-- Thin data: if folds < a floor (e.g. 12), still compute but mark results `low_confidence`
-  and the UI shows a warning; never crash.
+- Thin data: if folds < a floor (e.g. 12), still compute but flag results `low_confidence`
+  and the UI shows a warning; never crash. No extra table column is needed — `low_confidence`
+  is derived from the persisted `n_folds` (the API/`ValidationSummary` computes and exposes
+  the flag from `n_folds < floor`).
 - Degenerate DM (identical losses, tiny n): `dm_pvalue = None`, UI shows "n/a".
 - VAR fit failure at an origin (singular matrix): skip that fold for VAR only, count it,
   and record the reduced fold count rather than aborting the whole backtest.
