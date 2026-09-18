@@ -58,6 +58,47 @@ class RAGResponse(BaseModel):
     query_type: Literal["sql", "narrative"]
 
 
+class BacktestMetric(BaseModel):
+    target: str
+    horizon_months: int
+    model_type: str
+    baseline: str
+    n_folds: int
+    mae: float | None = None
+    rmse: float | None = None
+    mase: float | None = None
+    skill_score_vs_rw: float | None = None
+    dm_stat: float | None = None
+    dm_pvalue: float | None = None
+    backtest_start: date | None = None
+    backtest_end: date | None = None
+    low_confidence: bool = False
+
+
+class BacktestPredictionPoint(BaseModel):
+    target_date: date
+    model_type: str
+    y_true: float
+    y_pred: float
+
+
+class BacktestPredictionSeries(BaseModel):
+    target: str
+    horizon_months: int
+    points: list[BacktestPredictionPoint]
+
+
+class ValidationSummary(BaseModel):
+    total_configs: int
+    configs_beating_rw: int
+    best_skill_score: float | None = None
+    best_config: str | None = None
+    total_folds: int
+    backtest_start: date | None = None
+    backtest_end: date | None = None
+    low_confidence: bool = False
+
+
 class StatusResponse(BaseModel):
     seeding_status: str
     seeding_error: str | None = None
