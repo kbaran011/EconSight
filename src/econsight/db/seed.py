@@ -40,6 +40,13 @@ async def _forecast_row_count(conn: psycopg.AsyncConnection) -> int:
     return int(row[0]) if row else 0
 
 
+async def _backtest_row_count(conn: psycopg.AsyncConnection) -> int:
+    async with conn.cursor() as cur:
+        await cur.execute("SELECT COUNT(*) FROM marts.model_backtests")
+        row = await cur.fetchone()
+    return int(row[0]) if row else 0
+
+
 async def _run_seed() -> None:
     global _seed_status, _seed_error
 
@@ -68,6 +75,15 @@ async def _run_seed() -> None:
 
                 await run_models()
                 logger.info("seed.models_done")
+
+            async with db_connection() as conn:
+                backtest_count = await _backtest_row_count(conn)
+            if backtest_count == 0:
+                logger.info("seed.backtest_start")
+                from econsight.models.backtest import run_backtest
+
+                await run_backtest()
+                logger.info("seed.backtest_done")
 
         _seed_status = SeedStatus.READY
         logger.info("seed.complete")
