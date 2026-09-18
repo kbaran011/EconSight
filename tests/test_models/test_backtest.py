@@ -2,7 +2,12 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from econsight.models.backtest import build_pairs, walk_forward, NaiveRW, SeasonalNaive
+from econsight.models.backtest import (
+    build_pairs,
+    walk_forward,
+    NaiveRW,
+    SeasonalNaive,
+)
 
 
 def _levels(n=40):
@@ -56,3 +61,20 @@ def test_seasonal_naive_uses_value_12_months_before_target():
     # target_date - 12 months value
     tpos = list(lv.index).index(f.target_date)
     assert f.y_pred == pytest.approx(lv["cpi"].iloc[tpos - 12])
+
+
+from econsight.models.backtest import Fold, evaluate_target_horizon
+
+
+def test_evaluate_produces_metrics_and_skill_vs_rw():
+    lv = _levels(40)
+    X = pd.DataFrame({"f": np.arange(len(lv), dtype=float)}, index=lv.index)
+    metrics, preds = evaluate_target_horizon(
+        lv, X, "cpi", 1, models=[NaiveRW(), SeasonalNaive()], min_train=14
+    )
+    names = {m["model_type"] for m in metrics}
+    assert {"naive_rw", "seasonal_naive"} <= names
+    rw = next(m for m in metrics if m["model_type"] == "naive_rw")
+    assert rw["skill_score_vs_rw"] == pytest.approx(0.0)   # RW vs itself
+    assert rw["n_folds"] > 0
+    assert all("target_date" in p for p in preds)
