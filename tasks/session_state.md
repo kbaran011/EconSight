@@ -3,10 +3,27 @@
 > Update this file at the end of every session before stopping.
 
 ## Last Updated
-2026-06-08
+2026-09-18
 
 ## Current Phase
 **Portfolio Hardening** — interview-ready demo
+
+## Model Validation & RAG Grounding ✅ (2026-09-18, branch `feat/evaluation-and-grounding`)
+Answers the critique "show evaluation vs a baseline, a validation method, and evidence the
+answers are grounded." Full detail in `tasks/todo.md`; spec + plan under `docs/superpowers/`.
+- Backtest: `models/backtest.py` — leakage-free rolling-origin walk-forward; random walk /
+  seasonal naive / VAR / XGBoost scored with MASE, skill-score vs RW, Diebold–Mariano
+  (HLN + HAC for h=3). New `VARModel.predict_levels()` for fair level-space VAR.
+- Tables `marts.model_backtests` + `marts.backtest_predictions`; runner wired into seed.
+- API `/api/validation/{metrics,predictions,summary}` + `backtest_row_count` in `/api/status`.
+- RAG grounding: `rag/grounding.py` (independent per-sentence embedding verification →
+  groundedness score, unsupported-claim flags); `RAGResponse` extended (optional, back-compat)
+  with grounding + `executed_sql`.
+- Frontend: **Validation** page (honest metrics table, predicted-vs-actual chart, methodology
+  + data-window caveat) and grounding UI in **Ask** (meter, citations, amber flags, SQL).
+- Verified: backend 89 passed; ruff + mypy strict clean; frontend build + lint clean; engine
+  smoke on synthetic data (4 models × 31 folds). REAL numbers need a live seed run (no DB in
+  this session) — report them honestly, including where models do not beat random walk.
 
 ## What's Done
 
