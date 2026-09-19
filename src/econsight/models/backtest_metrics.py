@@ -65,7 +65,8 @@ def diebold_mariano(
     acov = 0.0
     for k in range(1, horizon):
         if k < n:
-            acov += float(np.mean(dev[k:] * dev[:-k]))
+            # normalize every autocovariance by n (textbook HAC), consistent with gamma0
+            acov += float(np.sum(dev[k:] * dev[:-k]) / n)
     var_dbar = (gamma0 + 2.0 * acov) / n
     if not np.isfinite(var_dbar) or var_dbar <= 0.0:
         return (float("nan"), None)

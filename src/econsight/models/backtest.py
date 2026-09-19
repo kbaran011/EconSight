@@ -274,7 +274,6 @@ def evaluate_target_horizon(
 
 
 _MIN_TRAIN_DEFAULT = 48
-_MIN_FOLDS = 12  # below this, results are flagged low_confidence downstream
 
 _METRIC_UPSERT = """
     INSERT INTO marts.model_backtests

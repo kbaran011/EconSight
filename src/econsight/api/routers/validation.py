@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 from typing import Any
 
 import psycopg
@@ -33,7 +34,11 @@ _PRED_SQL = """
 
 
 def _f(v: object) -> float | None:
-    return float(v) if v is not None else None  # type: ignore[arg-type]
+    if v is None:
+        return None
+    f = float(v)  # type: ignore[arg-type]
+    # NaN serializes to the non-standard JSON `NaN` token; return None instead.
+    return None if math.isnan(f) else f
 
 
 def _row_to_metric(r: tuple[Any, ...]) -> BacktestMetric:
