@@ -1,7 +1,13 @@
 import numpy as np
 import pytest
 
-from econsight.models.backtest_metrics import mae, rmse, mase, skill_score
+from econsight.models.backtest_metrics import (
+    diebold_mariano,
+    mae,
+    mase,
+    rmse,
+    skill_score,
+)
 
 
 def test_mae_rmse_basic():
@@ -34,9 +40,6 @@ def test_skill_score_sign():
     assert skill_score(rmse_model=0.5, rmse_baseline=1.0) == pytest.approx(0.5)
     assert skill_score(rmse_model=2.0, rmse_baseline=1.0) == pytest.approx(-1.0)
     assert np.isnan(skill_score(rmse_model=1.0, rmse_baseline=0.0))
-
-
-from econsight.models.backtest_metrics import diebold_mariano
 
 
 def test_dm_detects_clear_superiority():

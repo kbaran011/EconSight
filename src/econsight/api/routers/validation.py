@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 import psycopg
 from fastapi import APIRouter, Depends, Query
 
@@ -34,7 +36,7 @@ def _f(v: object) -> float | None:
     return float(v) if v is not None else None  # type: ignore[arg-type]
 
 
-def _row_to_metric(r: tuple) -> BacktestMetric:
+def _row_to_metric(r: tuple[Any, ...]) -> BacktestMetric:
     n_folds = int(r[4])
     return BacktestMetric(
         target=r[0], horizon_months=r[1], model_type=r[2], baseline=r[3],
@@ -90,11 +92,12 @@ async def get_summary(
         if m.mase is not None and m.mase < 1.0
         and m.skill_score_vs_rw is not None and m.skill_score_vs_rw > 0
     ]
-    best = max(
-        (m for m in contenders if m.skill_score_vs_rw is not None),
-        key=lambda m: m.skill_score_vs_rw,
-        default=None,
-    )
+    best: BacktestMetric | None = None
+    best_val = float("-inf")
+    for m in contenders:
+        if m.skill_score_vs_rw is not None and m.skill_score_vs_rw > best_val:
+            best_val = m.skill_score_vs_rw
+            best = m
     total_folds = sum(m.n_folds for m in metrics if m.model_type == "naive_rw")
     starts = [m.backtest_start for m in metrics if m.backtest_start]
     ends = [m.backtest_end for m in metrics if m.backtest_end]

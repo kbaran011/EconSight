@@ -1,13 +1,24 @@
 from __future__ import annotations
 
+import asyncio
 from dataclasses import dataclass
 from datetime import date
-from typing import Protocol
+from typing import Any, Protocol
 
 import numpy as np
 import pandas as pd
 
-from econsight.models.xgb_model import make_estimator
+from econsight.config import configure_logging, get_logger
+from econsight.db.connection import db_connection
+from econsight.models.backtest_metrics import (
+    diebold_mariano,
+    mae,
+    mase,
+    rmse,
+    skill_score,
+)
+from econsight.models.features import build_feature_matrix, load_mart
+from econsight.models.xgb_model import HORIZONS, TARGETS, make_estimator
 
 _TARGET_COLS = ["cpi", "unemployment_rate", "overnight_rate"]
 
@@ -62,7 +73,15 @@ class BacktestModel(Protocol):
 class NaiveRW:
     name: str = "naive_rw"
 
-    def predict(self, train_levels, X_train, y_train, x_origin, target, horizon) -> float:
+    def predict(
+        self,
+        train_levels: pd.DataFrame,
+        X_train: pd.DataFrame,
+        y_train: pd.Series,
+        x_origin: pd.DataFrame,
+        target: str,
+        horizon: int,
+    ) -> float:
         return float(train_levels[target].iloc[-1])  # y_t
 
 
@@ -70,7 +89,15 @@ class NaiveRW:
 class SeasonalNaive:
     name: str = "seasonal_naive"
 
-    def predict(self, train_levels, X_train, y_train, x_origin, target, horizon) -> float:
+    def predict(
+        self,
+        train_levels: pd.DataFrame,
+        X_train: pd.DataFrame,
+        y_train: pd.Series,
+        x_origin: pd.DataFrame,
+        target: str,
+        horizon: int,
+    ) -> float:
         # value at (target_date - 12 months) == position len-1 + horizon - 12
         offset = 13 - horizon
         s = train_levels[target]
@@ -83,7 +110,15 @@ class SeasonalNaive:
 class XGBBacktest:
     name: str = "xgboost"
 
-    def predict(self, train_levels, X_train, y_train, x_origin, target, horizon) -> float:
+    def predict(
+        self,
+        train_levels: pd.DataFrame,
+        X_train: pd.DataFrame,
+        y_train: pd.Series,
+        x_origin: pd.DataFrame,
+        target: str,
+        horizon: int,
+    ) -> float:
         model = make_estimator()
         model.fit(X_train, y_train, verbose=False)
         return float(model.predict(x_origin)[0])
@@ -93,7 +128,15 @@ class XGBBacktest:
 class VARBacktest:
     name: str = "var"
 
-    def predict(self, train_levels, X_train, y_train, x_origin, target, horizon) -> float:
+    def predict(
+        self,
+        train_levels: pd.DataFrame,
+        X_train: pd.DataFrame,
+        y_train: pd.Series,
+        x_origin: pd.DataFrame,
+        target: str,
+        horizon: int,
+    ) -> float:
         from econsight.models.var_model import VARModel
 
         var = VARModel()
@@ -150,15 +193,6 @@ def walk_forward(
     return results
 
 
-from econsight.models.backtest_metrics import (
-    diebold_mariano,
-    mae,
-    mase,
-    rmse,
-    skill_score,
-)
-
-
 def evaluate_target_horizon(
     levels: pd.DataFrame,
     X: pd.DataFrame,
@@ -166,7 +200,7 @@ def evaluate_target_horizon(
     horizon: int,
     models: list[BacktestModel],
     min_train: int,
-) -> tuple[list[dict], list[dict]]:
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     """Run the backtest and return (metric rows, prediction rows) as plain dicts."""
     folds_by_model = walk_forward(levels, X, target, horizon, models, min_train)
     # MASE scale = naive one-step MAE on the TRAINING portion only (levels up to the first
@@ -188,8 +222,8 @@ def evaluate_target_horizon(
         [f.y_true for f in rw_folds], [f.y_pred for f in rw_folds]
     ) if rw_folds else float("nan")
 
-    metric_rows: list[dict] = []
-    pred_rows: list[dict] = []
+    metric_rows: list[dict[str, Any]] = []
+    pred_rows: list[dict[str, Any]] = []
     for name, folds in folds_by_model.items():
         if not folds:
             continue
@@ -238,16 +272,6 @@ def evaluate_target_horizon(
             )
     return metric_rows, pred_rows
 
-
-import asyncio
-from typing import Any
-
-import psycopg
-
-from econsight.config import configure_logging, get_logger
-from econsight.db.connection import db_connection
-from econsight.models.features import build_feature_matrix, load_mart
-from econsight.models.xgb_model import HORIZONS, TARGETS
 
 _MIN_TRAIN_DEFAULT = 48
 _MIN_FOLDS = 12  # below this, results are flagged low_confidence downstream

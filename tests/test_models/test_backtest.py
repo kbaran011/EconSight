@@ -3,10 +3,11 @@ import pandas as pd
 import pytest
 
 from econsight.models.backtest import (
-    build_pairs,
-    walk_forward,
     NaiveRW,
     SeasonalNaive,
+    build_pairs,
+    evaluate_target_horizon,
+    walk_forward,
 )
 
 
@@ -61,9 +62,6 @@ def test_seasonal_naive_uses_value_12_months_before_target():
     # target_date - 12 months value
     tpos = list(lv.index).index(f.target_date)
     assert f.y_pred == pytest.approx(lv["cpi"].iloc[tpos - 12])
-
-
-from econsight.models.backtest import Fold, evaluate_target_horizon
 
 
 def test_evaluate_produces_metrics_and_skill_vs_rw():

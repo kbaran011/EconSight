@@ -139,10 +139,12 @@ async def _narrative_answer(question: str) -> RAGResponse:
     )
     answer_text = _text(response)
 
-    from econsight.rag.grounding import build_report
+    from typing import cast
+
+    from econsight.rag.grounding import Encoder, build_report
     from econsight.rag.retriever import get_encoder
 
-    report = build_report(answer_text, chunks, encoder=get_encoder())
+    report = build_report(answer_text, chunks, encoder=cast(Encoder, get_encoder()))
     return RAGResponse(
         answer=answer_text,
         sources=list({c["title"] for c in chunks if c["title"]}),

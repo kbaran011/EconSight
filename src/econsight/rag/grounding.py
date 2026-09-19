@@ -27,7 +27,7 @@ def parse_citations(sentence: str) -> set[int]:
 def _cosine(a: np.ndarray, b: np.ndarray) -> np.ndarray:
     a = a / (np.linalg.norm(a, axis=1, keepdims=True) + 1e-12)
     b = b / (np.linalg.norm(b, axis=1, keepdims=True) + 1e-12)
-    return a @ b.T
+    return np.asarray(a @ b.T)
 
 
 def build_report(

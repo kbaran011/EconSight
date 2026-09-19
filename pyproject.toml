@@ -69,7 +69,7 @@ strict = true
 warn_unused_ignores = false
 
 [[tool.mypy.overrides]]
-module = ["joblib", "shap", "sklearn.*", "xgboost", "statsmodels.*"]
+module = ["joblib", "shap", "sklearn.*", "xgboost", "statsmodels.*", "scipy", "scipy.*"]
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
